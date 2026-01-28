@@ -27,7 +27,11 @@ jobs:
         id: src_changes
         shell: pwsh
         run: |
-          $prevTag = git describe --tags --abbrev=0 "$env:GITHUB_SHA^" 2>$null
+          try {
+            $prevTag = git describe --tags --abbrev=0 "$env:GITHUB_SHA^" 2>$null
+          } catch {
+            $prevTag = $null
+          }
           if (-not $prevTag) {
             $hasChanges = $true
           } else {
