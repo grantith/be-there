@@ -1,0 +1,66 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag (e.g., v1.2.3-rc.1)"
+        required: true
+      prerelease:
+        description: "Mark as prerelease"
+        required: false
+        default: "true"
+
+jobs:
+  build-release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect src changes
+        id: src_changes
+        shell: pwsh
+        run: |
+          $prevTag = git describe --tags --abbrev=0 "$env:GITHUB_SHA^" 2>$null
+          if (-not $prevTag) {
+            $hasChanges = $true
+          } else {
+            $changed = git diff --name-only $prevTag $env:GITHUB_SHA | Where-Object { $_ -like "src/*" }
+            $hasChanges = $changed.Count -gt 0
+          }
+          "has_src_changes=$hasChanges" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Set version
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME
+          if (-not $version) { $version = "${{ inputs.version }}" }
+          echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+          $pre = $false
+          if ($version -match "-rc" -or $version -match "-beta" -or $version -match "-alpha") { $pre = $true }
+          if ("${{ inputs.prerelease }}" -eq "true") { $pre = $true }
+          echo "PRERELEASE=$pre" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Build release artifacts
+        if: steps.src_changes.outputs.has_src_changes == 'true'
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File tools/build_release.ps1 -Version $env:VERSION
+
+      - name: Create GitHub release
+        if: steps.src_changes.outputs.has_src_changes == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          prerelease: ${{ env.PRERELEASE }}
+          files: |
+            dist\be-there-source-${{ env.VERSION }}.zip
+            dist\be-there-${{ env.VERSION }}-win64.zip
+            dist\be-there.exe
