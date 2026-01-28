@@ -30,6 +30,7 @@ Include:
 4. GitHub Actions builds and publishes release assets:
    - `be-there-source-vX.Y.Z.zip`
    - `be-there-vX.Y.Z-win64.zip`
+   - `be-there-vX.Y.Z.exe`
 
 ## Release Candidates
 - Use a prerelease tag like `vX.Y.Z-rc.1`.
