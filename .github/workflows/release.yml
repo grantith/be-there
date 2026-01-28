@@ -27,30 +27,12 @@ jobs:
         id: src_changes
         shell: pwsh
         run: |
-          try {
-            $prevTag = git describe --tags --abbrev=0 "$env:GITHUB_SHA^" 2>$null
-          } catch {
-            $prevTag = $null
-          }
-          if (-not $prevTag) {
-            $hasChanges = $true
-          } else {
-            $changed = git diff --name-only $prevTag $env:GITHUB_SHA | Where-Object { $_ -like "src/*" }
-            $hasChanges = $changed.Count -gt 0
-          }
-          "has_src_changes=$hasChanges" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          powershell -ExecutionPolicy Bypass -File tools/detect_src_changes.ps1
 
       - name: Set version
         shell: pwsh
         run: |
-          $version = $env:GITHUB_REF_NAME
-          if (-not $version) { $version = "${{ inputs.version }}" }
-          echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
-
-          $pre = $false
-          if ($version -match "-rc" -or $version -match "-beta" -or $version -match "-alpha") { $pre = $true }
-          if ("${{ inputs.prerelease }}" -eq "true") { $pre = $true }
-          echo "PRERELEASE=$pre" | Out-File -FilePath $env:GITHUB_ENV -Append
+          powershell -ExecutionPolicy Bypass -File tools/set_release_env.ps1 -Version "${{ inputs.version }}" -Prerelease "${{ inputs.prerelease }}"
 
       - name: Build release artifacts
         if: steps.src_changes.outputs.has_src_changes == 'true'
