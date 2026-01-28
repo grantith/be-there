@@ -94,7 +94,7 @@ Enter Command Mode with `super + ;`.
 
 ## Known Limitations
 - This has not been tested with multi-monitor setups.
-- Dynamic grid ratios need added to support more screen sized and resolutions for the window-snap function.
+- Dynamic grid ratios need to be added to support more screen sizes and resolutions for the window-snap function.
 - Some apps (e.g., Discord) launch via `Update.exe` and keep versioned subfolders, which makes auto-resolution unreliable.
 - For some apps that minimize or close to the system tray, it's recommended you disable that in the program. Otherwise you can try to set `apps[].run` to a stable full path (or use `run_paths`) in your config.
 - Windows with elevated permissions may ignore be-there hotkeys unless be-there is run as Administrator.
