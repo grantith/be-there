@@ -110,6 +110,8 @@ For this project I was primarily inspired by what I was able to accomplish with 
 
 Other macOS tools that I tried for more than five minutes were [AeroSpace](https://github.com/nikitabobko/AeroSpace) and [Loop](https://github.com/MrKai77/Loop).
 
+The foundation of be-there was built upon [this](https://old.reddit.com/r/AutoHotkey/comments/17qv594/window_management_tool/), shared by u/CrashKZ -- Thanks to [/u/plankoe](https://old.reddit.com/user/plankoe) for the pieces that came from them.
+
 ### [FancyZones](https://learn.microsoft.com/en-us/windows/powertoys/fancyzones)
 
 FancyZones is great in a lot of ways. But it doesn't help me avoid needing to know where things are in order to focus on them, and its features are insufficient for a truly keyboard-centered workflow.
