@@ -1,0 +1,47 @@
+name: dev-build
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - "src/**"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect src changes
+        id: src_changes
+        shell: pwsh
+        run: |
+          $base = "${{ github.event.before }}"
+          if (-not $base -or $base -eq "0000000000000000000000000000000000000000") {
+            $base = "HEAD~1"
+          }
+          $changed = git diff --name-only $base $env:GITHUB_SHA | Where-Object { $_ -like "src/*" }
+          $hasChanges = $changed.Count -gt 0
+          "has_src_changes=$hasChanges" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Build dev artifacts
+        if: steps.src_changes.outputs.has_src_changes == 'true'
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File tools/build_release.ps1 -Version dev
+
+      - name: Upload artifacts
+        if: steps.src_changes.outputs.has_src_changes == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: be-there-dev-${{ github.sha }}
+          path: |
+            dist\be-there-source-dev.zip
+            dist\be-there-dev-win64.zip
+            dist\be-there.exe
