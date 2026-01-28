@@ -3,16 +3,12 @@
 be-there supports two distribution formats:
 
 ## Option A: Source (recommended for customization)
-1. Install AutoHotkey v2.
+1. Install [AutoHotkey v2](https://github.com/AutoHotkey/AutoHotkey).
 2. Download the source release (zip) or clone the repo.
 3. Copy `config/config.example.json` to `~/.config/be-there/config.json`.
 4. Run `be-there.ahk`.
 
 ## Option B: Compiled EXE (recommended for non-technical users)
-1. Download the compiled release zip.
-2. Copy `config/config.example.json` to `~/.config/be-there/config.json`.
-3. Run `be-there.exe`.
-
-## Notes
-- The EXE uses the same config path as the source version.
-- `tools/window_inspector.ahk` remains available for discovering window titles.
+1. Download the compiled exe.
+2. Run `be-there.exe`.
+3. Enter command mode (`super + ;`) then `e` to edit your config (auto created in `~/.config/be-there` if it doesn't already exist)
