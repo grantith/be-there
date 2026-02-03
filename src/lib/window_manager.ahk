@@ -344,11 +344,32 @@ class Window
 
         WinRestore(hwnd)                                                ; unmaximizes window if maximized
 
+        target_x := Screen.X_Pos_Percent(x_pos)
+        target_y := Screen.Y_Pos_Percent(y_pos)
+        target_w := Screen.Width_Percent(width)
+        target_h := Screen.Height_Percent(height)
+
+        gap_px := Config["window_manager"]["gap_px"]
+        if (gap_px > 0) {
+            left_inset := gap_px
+            right_inset := gap_px
+            top_inset := gap_px
+            bottom_inset := gap_px
+
+            target_x += left_inset
+            target_y += top_inset
+            target_w -= (left_inset + right_inset)
+            target_h -= (top_inset + bottom_inset)
+
+            if (target_w <= 0 || target_h <= 0)
+                return
+        }
+
         WinMoveEx(                                                      ; move window taking invisible borders into account
-            Screen.X_Pos_Percent(x_pos),                                ; move window x_pos to x% of the screen
-            Screen.Y_Pos_Percent(y_pos),                                ; move window y_pos to x% of the screen
-            Screen.Width_Percent(width),                                ; resize window width to x%
-            Screen.Height_Percent(height),                              ; resize window height to x%
+            target_x,                                                   ; move window x_pos to x% of the screen
+            target_y,                                                   ; move window y_pos to x% of the screen
+            target_w,                                                   ; resize window width to x%
+            target_h,                                                   ; resize window height to x%
             hwnd                                                        ; window to move
         )
 

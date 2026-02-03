@@ -75,7 +75,7 @@ Enter Command Mode with `super + ;`.
 - `global_hotkeys`: array of scoped hotkey bindings (set `target_exes` empty for global use).
 - `window`: resize/move steps and hotkeys (including move mode).
 - `window_selector`: Window Selector settings (hotkey, match fields, display limits).
-- `window_manager`: grid size, margins, and ignored window classes.
+- `window_manager`: grid size, margins, gaps, and ignored window classes.
 - `focus_border`: overlay appearance and update interval.
 - `helper`: command overlay settings.
 - `reload`: hotkey and file watch settings for config reload.

@@ -69,6 +69,7 @@ ConfigSchema() {
                 "left", "number",
                 "right", "number"
             ),
+            "gap_px", "number",
             "exceptions_regex", "string"
         ),
         "focus_border", Map(

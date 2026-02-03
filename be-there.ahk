@@ -120,6 +120,7 @@ DefaultConfig() {
                 "left", 4,
                 "right", 4
             ),
+            "gap_px", 0,
             "exceptions_regex", "(Shell_TrayWnd|Shell_SecondaryTrayWnd|WorkerW|XamlExplorerHostIslandWindow)"
         ),
         "focus_border", Map(
