@@ -5,6 +5,7 @@ global command_toast_text := ""
 global command_toast_visible := false
 global command_toast_view_key := ""
 global command_toast_apps_list := ""
+global command_toast_actions_list := ""
 global command_toast_image_list := ""
 global command_toast_icon_cache := Map()
 global command_toast_default_icon_index := 0
@@ -52,6 +53,7 @@ ShowCommandToast() {
         command_toast_gui := ""
         command_toast_text := ""
         command_toast_apps_list := ""
+        command_toast_actions_list := ""
         command_toast_image_list := ""
         command_toast_icon_cache := Map()
         command_toast_default_icon_index := 0
@@ -92,7 +94,7 @@ ShowCommandToast() {
 }
 
 CreateCommandToastGui(model) {
-    global command_toast_gui, command_toast_text, command_toast_apps_list, command_toast_image_list
+    global command_toast_gui, command_toast_text, command_toast_apps_list, command_toast_actions_list, command_toast_image_list
     command_toast_gui := Gui("+AlwaysOnTop -Caption +ToolWindow +Border", "be-there Command Overlay")
     command_toast_gui.MarginX := 12
     command_toast_gui.MarginY := 10
@@ -103,28 +105,36 @@ CreateCommandToastGui(model) {
     command_toast_gui.SetFont("s10 w600", "Segoe UI")
     command_toast_gui.AddText("xm", model["title"])
 
-    overlay_width := 420
+    overlay_width := 520
 
     if (model["mode"] = "normal") {
         command_toast_gui.SetFont("s9 w600", "Segoe UI")
         command_toast_gui.AddText("xm y+6", "Apps")
         command_toast_gui.SetFont("s9", "Segoe UI")
 
-        row_count := Max(1, Min(8, model["apps"].Length))
+        row_count := Max(1, Min(10, model["apps"].Length))
         command_toast_apps_list := command_toast_gui.AddListView("xm w" overlay_width " r" row_count " -Multi NoSortHdr", ["Key", "App"])
         command_toast_image_list := IL_Create(16)
         command_toast_default_icon_index := EnsureDefaultAppIcon()
         command_toast_apps_list.SetImageList(command_toast_image_list, 1)
-        command_toast_apps_list.ModifyCol(1, 70)
-        command_toast_apps_list.ModifyCol(2, overlay_width - 90)
+        command_toast_apps_list.ModifyCol(1, 90)
+        command_toast_apps_list.ModifyCol(2, overlay_width - 110)
 
         for _, app in model["apps"] {
             icon_index := GetAppIconIndex(app["icon_path"])
             command_toast_apps_list.Add("Icon" icon_index, app["hotkey"], app["label"])
         }
 
-        command_toast_gui.SetFont("s9", "Consolas")
-        command_toast_text := command_toast_gui.AddText("xm y+6 w" overlay_width, model["body_text"])
+        command_toast_gui.SetFont("s9", "Segoe UI")
+        rows := model["rows"]
+        row_count := Max(1, Min(20, rows.Length))
+        command_toast_actions_list := command_toast_gui.AddListView("xm y+6 w" overlay_width " r" row_count " -Multi NoSortHdr", ["Key", "Action"])
+        command_toast_actions_list.ModifyCol(1, 230)
+        command_toast_actions_list.ModifyCol(2, overlay_width - 250)
+
+        for _, row in rows {
+            command_toast_actions_list.Add("", row["key"], row["desc"])
+        }
         return
     }
 
@@ -239,39 +249,47 @@ BuildCommandToastModel() {
     model["mode"] := "normal"
     model["title"] := "be-there"
     model["apps"] := BuildAppRows()
-    model["body_text"] := BuildCommandToastBodyText(key_width)
-    model["key"] := "normal|" model["body_text"] "|" BuildAppsKey(model["apps"])
+    model["rows"] := BuildCommandToastRows(key_width)
+    model["key"] := "normal|" BuildCommandToastRowsKey(model["rows"]) "|" BuildAppsKey(model["apps"])
     return model
 }
 
-BuildCommandToastBodyText(key_width := 16) {
+BuildCommandToastRows(key_width := 16) {
     global Config
-    lines := []
-    lines.Push("Window")
-    lines.Push(FormatRow("super+arrows", "resize", key_width))
-    lines.Push(FormatRow("super+shift+h/j/k/l", "resize center", key_width))
-    lines.Push(FormatRow("super+ctrl+h/j/k/l", "move", key_width))
-    lines.Push(FormatRow("super+m", "maximize", key_width))
-    lines.Push(FormatRow("super+q", "close", key_width))
-    lines.Push(FormatRow("super+" Config["window"]["cycle_app_windows_hotkey"], "cycle app windows", key_width))
+    rows := []
+    rows.Push(Map("key", "Window", "desc", ""))
+    rows.Push(Map("key", "super+arrows", "desc", "resize"))
+    rows.Push(Map("key", "super+shift+h/j/k/l", "desc", "resize center"))
+    rows.Push(Map("key", "super+ctrl+h/j/k/l", "desc", "move"))
+    rows.Push(Map("key", "super+m", "desc", "maximize"))
+    rows.Push(Map("key", "super+q", "desc", "close"))
+    rows.Push(Map("key", "super+" Config["window"]["cycle_app_windows_hotkey"], "desc", "cycle app windows"))
     if Config.Has("window_selector") && Config["window_selector"]["enabled"] {
-        lines.Push(FormatRow("super+" Config["window_selector"]["hotkey"], "window selector", key_width))
+        rows.Push(Map("key", "super+" Config["window_selector"]["hotkey"], "desc", "window selector"))
     }
     if Config.Has("directional_focus") && Config["directional_focus"]["enabled"] {
-        lines.Push(FormatRow("alt+h/l", "focus left/right", key_width))
-        lines.Push(FormatRow("alt+j/k", "focus down/up", key_width))
-        lines.Push(FormatRow("alt+[ / ]", "cycle stacked", key_width))
+        rows.Push(Map("key", "alt+h/l", "desc", "focus left/right"))
+        rows.Push(Map("key", "alt+j/k", "desc", "focus down/up"))
+        rows.Push(Map("key", "alt+[ / ]", "desc", "cycle stacked"))
     }
-    lines.Push("")
-    lines.Push("Global Hotkeys")
+    rows.Push(Map("key", "", "desc", ""))
+    rows.Push(Map("key", "Global Hotkeys", "desc", ""))
     for _, hotkey_config in Config["global_hotkeys"] {
         if hotkey_config["enabled"]
-            lines.Push(FormatRow(hotkey_config["hotkey"], hotkey_config["send_keys"], key_width))
+            rows.Push(Map("key", hotkey_config["hotkey"], "desc", hotkey_config["send_keys"]))
     }
-    lines.Push("")
-    lines.Push("Command Mode")
-    lines.Push(FormatRow(Config["reload"]["mode_hotkey"], "enter command mode", key_width))
-    return StrJoin(lines, "`n")
+    rows.Push(Map("key", "", "desc", ""))
+    rows.Push(Map("key", "Command Mode", "desc", ""))
+    rows.Push(Map("key", Config["reload"]["mode_hotkey"], "desc", "enter command mode"))
+    return rows
+}
+
+BuildCommandToastRowsKey(rows) {
+    key := ""
+    for _, row in rows {
+        key .= row["key"] "|" row["desc"] "||"
+    }
+    return key
 }
 
 BuildAppRows() {
