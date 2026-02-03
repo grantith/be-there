@@ -11,8 +11,8 @@ focus_config := Config["focus_border"]
 global focus_border_enabled := focus_config["enabled"]
 if focus_border_enabled {
     ; ------------- User Settings -------------
-    border_color := Integer(focus_config["border_color"])   ; Hex color (0xRRGGBB)
-    move_mode_color := Integer(focus_config["move_mode_color"]) ; Hex color (0xRRGGBB)
+    border_color := ParseHexColor(focus_config["border_color"])   ; Hex color (#RRGGBB)
+    move_mode_color := ParseHexColor(focus_config["move_mode_color"]) ; Hex color (#RRGGBB)
     border_thickness := Integer(focus_config["border_thickness"])      ; Border thickness in pixels
     corner_radius := Integer(focus_config["corner_radius"])        ; Corner roundness in pixels
     update_interval := Integer(focus_config["update_interval_ms"])      ; How often (ms) to check/update active window
@@ -135,4 +135,19 @@ FlashFocusBorder(color := 0xB0B0B0, duration_ms := 130) {
         overlay.BackColor := Format("{:06X}", flash_color & 0xFFFFFF)
         current_color := flash_color
     }
+}
+
+ParseHexColor(value) {
+    if (value is Integer)
+        return value
+    if !(value is String)
+        return 0
+    trimmed := Trim(value)
+    if (SubStr(trimmed, 1, 1) = "#")
+        trimmed := SubStr(trimmed, 2)
+    if (StrLen(trimmed) = 8 && RegExMatch(trimmed, "i)^0x[0-9a-f]{6}$"))
+        return Integer(trimmed)
+    if (StrLen(trimmed) = 6 && RegExMatch(trimmed, "i)^[0-9a-f]{6}$"))
+        return Integer("0x" trimmed)
+    return 0
 }

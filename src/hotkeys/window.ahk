@@ -260,6 +260,14 @@ CloseWindow(*) {
     WinClose "ahk_id " hwnd
 }
 
+MinimizeWindow(*) {
+    hwnd := WinExist("A")
+    if !hwnd
+        return
+    WinMinimize "ahk_id " hwnd
+    ActivateMostRecentWindow(hwnd)
+}
+
 CycleAppWindows(*) {
     hwnd := WinExist("A")
     if !hwnd
@@ -307,6 +315,8 @@ Hotkey("q", CloseWindow)
 Hotkey(cycle_app_windows_hotkey, CycleAppWindows)
 HotIf
 
+Hotkey("!-", MinimizeWindow)
+
 if move_mode_enabled {
     HotIf Window.IsMoveMode
     Hotkey("h", (*) => MoveActiveWindow(-move_step, 0))
@@ -320,4 +330,23 @@ if move_mode_enabled {
 ExitMoveMode() {
     Window.SetMoveMode(false)
     UpdateCommandToastVisibility()
+}
+
+ActivateMostRecentWindow(exclude_hwnd := 0) {
+    z_list := WinGetList()
+    for _, hwnd in z_list {
+        if (hwnd = exclude_hwnd)
+            continue
+        if Window.IsException("ahk_id " hwnd)
+            continue
+        if (WinGetMinMax("ahk_id " hwnd) = -1)
+            continue
+        ex_style := WinGetExStyle("ahk_id " hwnd)
+        if (ex_style & 0x80) || (ex_style & 0x8000000)
+            continue
+        if !(WinGetStyle("ahk_id " hwnd) & 0x10000000)
+            continue
+        WinActivate "ahk_id " hwnd
+        return
+    }
 }

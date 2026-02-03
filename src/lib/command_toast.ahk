@@ -105,20 +105,28 @@ CreateCommandToastGui(model) {
     command_toast_gui.SetFont("s10 w600", "Segoe UI")
     command_toast_gui.AddText("xm", model["title"])
 
-    overlay_width := 520
+    GetCommandToastWorkArea(&work_left, &work_top, &work_right, &work_bottom)
+    work_w := work_right - work_left
+    work_h := work_bottom - work_top
+    width_ratio := (work_w > 2000) ? 0.15 : 0.25
+    overlay_width := Round(ClampValue(work_w * width_ratio, 380, 640))
+    row_height := 22
+    apps_rows_max := ClampValue(Floor((work_h * 0.22) / row_height), 6, 12)
+    actions_rows_max := ClampValue(Floor((work_h * 0.5) / row_height), 10, 26)
 
     if (model["mode"] = "normal") {
         command_toast_gui.SetFont("s9 w600", "Segoe UI")
         command_toast_gui.AddText("xm y+6", "Apps")
         command_toast_gui.SetFont("s9", "Segoe UI")
 
-        row_count := Max(1, Min(10, model["apps"].Length))
+        row_count := Max(1, Min(apps_rows_max, model["apps"].Length))
         command_toast_apps_list := command_toast_gui.AddListView("xm w" overlay_width " r" row_count " -Multi NoSortHdr", ["Key", "App"])
         command_toast_image_list := IL_Create(16)
         command_toast_default_icon_index := EnsureDefaultAppIcon()
         command_toast_apps_list.SetImageList(command_toast_image_list, 1)
-        command_toast_apps_list.ModifyCol(1, 90)
-        command_toast_apps_list.ModifyCol(2, overlay_width - 110)
+        apps_key_width := Round(ClampValue(overlay_width * 0.2, 80, 140))
+        command_toast_apps_list.ModifyCol(1, apps_key_width)
+        command_toast_apps_list.ModifyCol(2, overlay_width - apps_key_width - 20)
 
         for _, app in model["apps"] {
             icon_index := GetAppIconIndex(app["icon_path"])
@@ -127,10 +135,11 @@ CreateCommandToastGui(model) {
 
         command_toast_gui.SetFont("s9", "Segoe UI")
         rows := model["rows"]
-        row_count := Max(1, Min(20, rows.Length))
+        row_count := Max(1, Min(actions_rows_max, rows.Length))
         command_toast_actions_list := command_toast_gui.AddListView("xm y+6 w" overlay_width " r" row_count " -Multi NoSortHdr", ["Key", "Action"])
-        command_toast_actions_list.ModifyCol(1, 230)
-        command_toast_actions_list.ModifyCol(2, overlay_width - 250)
+        actions_key_width := Round(ClampValue(overlay_width * 0.45, 180, 320))
+        command_toast_actions_list.ModifyCol(1, actions_key_width)
+        command_toast_actions_list.ModifyCol(2, overlay_width - actions_key_width - 20)
 
         for _, row in rows {
             command_toast_actions_list.Add("", row["key"], row["desc"])
@@ -262,6 +271,7 @@ BuildCommandToastRows(key_width := 16) {
     rows.Push(Map("key", "super+shift+h/j/k/l", "desc", "resize center"))
     rows.Push(Map("key", "super+ctrl+h/j/k/l", "desc", "move"))
     rows.Push(Map("key", "super+m", "desc", "maximize"))
+    rows.Push(Map("key", "alt+-", "desc", "minimize"))
     rows.Push(Map("key", "super+q", "desc", "close"))
     rows.Push(Map("key", "super+" Config["window"]["cycle_app_windows_hotkey"], "desc", "cycle app windows"))
     if Config.Has("window_selector") && Config["window_selector"]["enabled"] {
@@ -425,4 +435,8 @@ RepeatChar(char, count) {
     loop count
         output .= char
     return output
+}
+
+ClampValue(value, min_value, max_value) {
+    return Max(min_value, Min(value, max_value))
 }

@@ -23,7 +23,7 @@ set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
 compress_gifs path:
   #!{{shebang}}
-  Get-ChildItem {{path}} -Filter *.gif -Exclude *.optimized.* | ForEach-Object {
+  Get-ChildItem {{path}} -Filter *.gif | ForEach-Object {
       $in = $_.FullName
       $tmp = [System.IO.Path]::ChangeExtension($in, ".optimized.gif")
       ffmpeg -y -i "$in" `

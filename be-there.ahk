@@ -138,8 +138,8 @@ DefaultConfig() {
         ),
         "focus_border", Map(
             "enabled", true,
-            "border_color", "0x357EC7",
-            "move_mode_color", "0x2ECC71",
+            "border_color", "#357EC7",
+            "move_mode_color", "#2ECC71",
             "border_thickness", 4,
             "corner_radius", 12,
             "update_interval_ms", 20
