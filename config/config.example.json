@@ -91,6 +91,17 @@
     "gap_px": 0,
     "exceptions_regex": "(Shell_TrayWnd|Shell_SecondaryTrayWnd|WorkerW|XamlExplorerHostIslandWindow)"
   },
+  "directional_focus": {
+    "enabled": true,
+    "stacked_overlap_threshold": 0.5,
+    "stack_tolerance_px": 25,
+    "prefer_topmost": true,
+    "prefer_last_stacked": true,
+    "frontmost_guard_px": 200,
+    "perpendicular_overlap_min": 0.2,
+    "cross_monitor": false,
+    "debug_enabled": false
+  },
   "focus_border": {
     "enabled": true,
     "border_color": "0x357EC7",

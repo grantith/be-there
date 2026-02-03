@@ -66,11 +66,13 @@ SetWinDelay(-1)
 window_nav_modifier := super_key
 
 #Include src/lib/window_manager.ahk
+#Include src/lib/directional_focus.ahk
 #Include src/lib/focus_border.ahk
 #Include src/lib/window_walker.ahk
 #Include src/hotkeys/global_hotkey.ahk
 #Include src/hotkeys/apps.ahk
 #Include src/hotkeys/window.ahk
+#Include src/hotkeys/directional_focus.ahk
 #Include src/hotkeys/window_walker.ahk
 #Include src/hotkeys/unbound.ahk
 
@@ -122,6 +124,17 @@ DefaultConfig() {
             ),
             "gap_px", 0,
             "exceptions_regex", "(Shell_TrayWnd|Shell_SecondaryTrayWnd|WorkerW|XamlExplorerHostIslandWindow)"
+        ),
+        "directional_focus", Map(
+            "enabled", true,
+            "stacked_overlap_threshold", 0.5,
+            "stack_tolerance_px", 25,
+            "prefer_topmost", true,
+            "prefer_last_stacked", true,
+            "frontmost_guard_px", 200,
+            "perpendicular_overlap_min", 0.2,
+            "cross_monitor", false,
+            "debug_enabled", false
         ),
         "focus_border", Map(
             "enabled", true,

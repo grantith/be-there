@@ -72,6 +72,17 @@ ConfigSchema() {
             "gap_px", "number",
             "exceptions_regex", "string"
         ),
+        "directional_focus", Map(
+            "enabled", "bool",
+            "stacked_overlap_threshold", "number",
+            "stack_tolerance_px", "number",
+            "prefer_topmost", "bool",
+            "prefer_last_stacked", "bool",
+            "frontmost_guard_px", "number",
+            "perpendicular_overlap_min", "number",
+            "cross_monitor", "bool",
+            "debug_enabled", "bool"
+        ),
         "focus_border", Map(
             "enabled", "bool",
             "border_color", "string",

@@ -51,6 +51,9 @@ Other
 - `super + alt` send `ctrl + tab` (configurable via `global_hotkeys`)
 - `super + c` to cycle through windows of the same app
 - `super + w` to open Window Selector (fuzzy find open windows)
+- `alt + h/l` focus left/right
+- `alt + j/k` focus down/up (non-stacked)
+- `alt + [` / `alt + ]` cycle stacked windows
 
 Enter Command Mode with `super + ;`.
 - `r` to reload app/config
@@ -76,6 +79,7 @@ Enter Command Mode with `super + ;`.
 - `window`: resize/move steps and hotkeys (including move mode).
 - `window_selector`: Window Selector settings (hotkey, match fields, display limits).
 - `window_manager`: grid size, margins, gaps, and ignored window classes.
+- `directional_focus`: directional focus settings (stacked threshold, stack tolerance, topmost preference, last-stacked preference, frontmost guard, perpendicular overlap min, cross-monitor, debug).
 - `focus_border`: overlay appearance and update interval.
 - `helper`: command overlay settings.
 - `reload`: hotkey and file watch settings for config reload.
