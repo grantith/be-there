@@ -207,7 +207,7 @@ BuildCommandToastModel() {
     global Config
     is_command_mode := ReloadModeActive()
     is_move_mode := Window.IsMoveMode()
-    key_width := 16
+    key_width := 22
     model := Map()
 
     if is_move_mode {
@@ -226,9 +226,9 @@ BuildCommandToastModel() {
         lines.Push(FormatRow("r", "reload config", key_width))
         lines.Push(FormatRow("e", "open config file", key_width))
         lines.Push(FormatRow("i", "window inspector", key_width))
-        lines.Push(FormatRow("n", "toggle helper", key_width))
+        lines.Push(FormatRow("n", "toggle command overlay", key_width))
         lines.Push(FormatRow("w", "new window (active app)", key_width))
-        lines.Push(FormatRow("Esc", "exit command mode", key_width))
+        lines.Push(FormatRow("Esc/super", "exit command mode", key_width))
         model["mode"] := "command"
         model["title"] := "Command Mode"
         model["body_text"] := StrJoin(lines, "`n")
@@ -248,14 +248,14 @@ BuildCommandToastBodyText(key_width := 16) {
     global Config
     lines := []
     lines.Push("Window")
-    lines.Push(FormatRow("arrows", "resize", key_width))
-    lines.Push(FormatRow("shift+h/j/k/l", "resize center", key_width))
-    lines.Push(FormatRow("ctrl+h/j/k/l", "move", key_width))
-    lines.Push(FormatRow("m", "maximize", key_width))
-    lines.Push(FormatRow("q", "close", key_width))
-    lines.Push(FormatRow(Config["window"]["cycle_app_windows_hotkey"], "cycle app windows", key_width))
+    lines.Push(FormatRow("super+arrows", "resize", key_width))
+    lines.Push(FormatRow("super+shift+h/j/k/l", "resize center", key_width))
+    lines.Push(FormatRow("super+ctrl+h/j/k/l", "move", key_width))
+    lines.Push(FormatRow("super+m", "maximize", key_width))
+    lines.Push(FormatRow("super+q", "close", key_width))
+    lines.Push(FormatRow("super+" Config["window"]["cycle_app_windows_hotkey"], "cycle app windows", key_width))
     if Config.Has("window_selector") && Config["window_selector"]["enabled"] {
-        lines.Push(FormatRow(Config["window_selector"]["hotkey"], "window selector", key_width))
+        lines.Push(FormatRow("super+" Config["window_selector"]["hotkey"], "window selector", key_width))
     }
     if Config.Has("directional_focus") && Config["directional_focus"]["enabled"] {
         lines.Push(FormatRow("alt+h/l", "focus left/right", key_width))
