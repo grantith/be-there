@@ -1,7 +1,7 @@
 # be-there
 A window manager written in AutoHotkey v2.
 
-The aim is a low-friction workflow: a single super modifier, mnemonic app keys, and fast window actions. Alt+Tab and Win+Tab still work, but you will hardly use them
+The aim is a low-friction workflow: a single super modifier, mnemonic app keys, and fast window actions. Alt+Tab and Win+Tab still work, but you will hardly use them.
 
 ## Contents
 - [Overview](#overview)
@@ -115,21 +115,20 @@ Enter Command Mode with `super + ;`.
 
 ## Similar tools and inspirations
 
-There are a lot of window managers out there with various perspectives.
-For this project I was primarily inspired by what I was able to accomplish with [Raycast](https://www.raycast.com/) on macOS. Between [Karabiner](https://karabiner-elements.pqrs.org/), Raycast, and [HammerSpoon](https://www.hammerspoon.org/) you could do all of `be-there` and more on macOS. As I needed to move back to windows for work, I wanted a way to use the same flow on Windows that I had become accustomed to on macOS.
+For this project I was primarily inspired by what I was able to accomplish with [Raycast](https://www.raycast.com/) on macOS. Between [Karabiner](https://karabiner-elements.pqrs.org/), Raycast, and [HammerSpoon](https://www.hammerspoon.org/) one could achieve all of `be-there` and more on macOS. I needed to move back to Windows for work, and I wanted a way to use the same flow on Windows that I had become accustomed to on macOS.
 
 Other macOS tools that I tried for more than five minutes were [AeroSpace](https://github.com/nikitabobko/AeroSpace) and [Loop](https://github.com/MrKai77/Loop).
 
-The foundation of be-there was built upon [this](https://old.reddit.com/r/AutoHotkey/comments/17qv594/window_management_tool/), shared by u/CrashKZ -- Thanks to [/u/plankoe](https://old.reddit.com/user/plankoe) for the pieces that came from them.
+The foundation of be-there was built upon [this reddit post](https://old.reddit.com/r/AutoHotkey/comments/17qv594/window_management_tool/), shared by u/CrashKZ -- Thanks to [/u/plankoe](https://old.reddit.com/user/plankoe) for the pieces they shared, too.
 
 ### [FancyZones](https://learn.microsoft.com/en-us/windows/powertoys/fancyzones)
 
-FancyZones is great in a lot of ways. But it doesn't help me avoid needing to know where things are in order to focus on them, and its features are insufficient for a truly keyboard-centered workflow.
+FancyZones is okay, but it doesn't remove the need to know where things are in order to focus on them, and its features are insufficient for a truly keyboard-centered workflow.
 
 ### [Komorebi](https://github.com/LGUG2Z/komorebi)
 
-I really like komorebi. I didn't use it for long and I have never been able to stick with tiling in the long run, but for those who prefer the tiling approach this might be the best option on Windows.
+I really like komorebi--though I didn't use it for long and I have never been able to stick with tiling in the long run--but for those who prefer the tiling approach this might be the best option on Windows.
 
 ### [GlazeWM](https://github.com/glzr-io/glazewm)
 
-GlazeWM is another popular tiling window manager.
+GlazeWM is another popular tiling window manager for Windows operating systems.
