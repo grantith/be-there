@@ -464,9 +464,17 @@ FindDirectionalBest(active, candidates, direction, prefer_topmost := false, fron
     scored := []
     min_primary := ""
 
+    center_band := GetCenterBandBounds()
+    active_in_side_band := IsActiveInSideBand(active, center_band)
+
     for _, win in candidates {
         if !IsInDirection(active, win, direction)
             continue
+
+        if ((direction = "up" || direction = "down") && active_in_side_band) {
+            if IsCandidateInCenterBand(win, center_band)
+                continue
+        }
 
         overlap := (direction = "left" || direction = "right")
             ? OverlapRatioVertical(active, win)
@@ -573,6 +581,30 @@ FindDirectionalBest(active, candidates, direction, prefer_topmost := false, fron
     directional_focus_last_selected_overlap := best_entry["overlap"]
     directional_focus_last_filtered_count := filtered.Length
     return (best_entry != "") ? best_entry["win"] : ""
+}
+
+GetCenterBandBounds() {
+    left := Screen.left
+    right := Screen.right
+    width := right - left
+    band_left := left + (width / 3)
+    band_right := left + (width * 2 / 3)
+    return Map(
+        "left", band_left,
+        "right", band_right
+    )
+}
+
+IsActiveInSideBand(active, center_band) {
+    if !(active is Map)
+        return false
+    return (active["cx"] < center_band["left"] || active["cx"] > center_band["right"])
+}
+
+IsCandidateInCenterBand(win, center_band) {
+    if !(win is Map)
+        return false
+    return (win["cx"] >= center_band["left"] && win["cx"] <= center_band["right"])
 }
 
 ActivateWindow(hwnd) {
