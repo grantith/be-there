@@ -20,19 +20,15 @@ The aim is a low-friction workflow: a single super modifier, mnemonic app keys, 
 ## Overview
 
 > [!NOTE]
-> CapsLock is the default super key.
+> CapsLock is the default super key, because who needs it?
+
+### Features
 
 
-Show the [Command Overlay](#command-overlay) when the super key is held.
-![Alt text](docs/assets/command_overlay.png)
-
-Use the "window selector" (like powertoys window walker) with `super + w`.
-![Alt text](docs/assets/window_selector.png)
-
-Jump focus to an app or launch it with `super + [letter]`.
+Launch-or-focus a program with `super + [letter]`, or directionally change window focus with `alt + h/l/j/k` (left, right, down, up) and `alt + [` / `alt + ]` for back/forward in a stack.
 ![Alt text](docs/assets/focus.gif)
 
-Cycle centered window widths with `super + space`.
+Cycle centered window widths with `super + spacebar`.
 ![Alt text](docs/assets/center-cycle.gif)
 
 Maximizes/restores with `super + m`.
@@ -47,16 +43,22 @@ Freely move a window with double tap super + h/j/k/l
 Resize edges with `super + shift + h/j/k/l`.
 ![Alt text](docs/assets/resize.gif)
 
+Show the [Command Overlay](#command-overlay) when the super key is held. Disable through command mode.
+![Alt text](docs/assets/command_overlay.png)
+
+Use the "window switcher" (like powertoys window walker) with `super + w`.
+![Alt text](docs/assets/window_switcher.png)
+
 Other
-- `super + alt` send `ctrl + tab` (configurable via `global_hotkeys`)
-- `super + c` to cycle through windows of the same app
-- `super + w` to open Window Selector (fuzzy find open windows)
-- `alt + h/l` focus left/right
-- `alt + j/k` focus down/up (non-stacked)
-- `alt + [` / `alt + ]` cycle stacked windows
+- `super + alt` sends `ctrl + tab` (configurable via `global_hotkeys`)
+- `super + c` cycle through windows of the same app
+- `super + w` open Window Selector (fuzzy find open windows)
+- `alt + h/l` move window focus left/right
+- `alt + j/k` move window focus down/up (non-stacked)
+- `alt + [` / `alt + ]` move window focus forward/back through stacked windows
 
 Enter Command Mode with `super + ;`.
-- `r` to reload app/config
+- `r` to reload program/config
 - `e` to open config file
 - `w` opens a new window for the active program, if the program supports it
 - `n` toggles the command overlay on or off
@@ -102,9 +104,8 @@ Enter Command Mode with `super + ;`.
 - Use Refresh to update the list; Copy Selected/All or Export to save results.
 
 ## Known Limitations
-- This has not been tested with multi-monitor setups.
-- Dynamic grid ratios need to be added to support more screen sizes and resolutions for the window-snap function.
-- Some apps (e.g., Discord) launch via `Update.exe` and keep versioned subfolders, which makes auto-resolution unreliable.
+- This has not been tested with multi-monitor setups or much outside of ultra-wide monitors.
+- Some apps (e.g., Discord) launch via `Update.exe` and keep versioned subfolders, which makes auto-resolution unreliable for launching or focusing more challenging.
 - For some apps that minimize or close to the system tray, it's recommended you disable that in the program. Otherwise you can try to set `apps[].run` to a stable full path (or use `run_paths`) in your config.
 - Windows with elevated permissions may ignore be-there hotkeys unless be-there is run as Administrator.
 
