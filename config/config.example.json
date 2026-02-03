@@ -71,6 +71,16 @@
     "cycle_app_windows_hotkey": "c",
     "center_width_cycle_hotkey": "Space"
   },
+  "window_selector": {
+    "enabled": true,
+    "hotkey": "w",
+    "max_results": 12,
+    "title_preview_len": 60,
+    "match_title": true,
+    "match_exe": true,
+    "include_minimized": true,
+    "close_on_focus_loss": true
+  },
   "window_manager": {
     "grid_size": 3,
     "margins": {
@@ -78,18 +88,31 @@
       "left": 4,
       "right": 4
     },
+    "gap_px": 0,
     "exceptions_regex": "(Shell_TrayWnd|Shell_SecondaryTrayWnd|WorkerW|XamlExplorerHostIslandWindow)"
+  },
+  "directional_focus": {
+    "enabled": true,
+    "stacked_overlap_threshold": 0.5,
+    "stack_tolerance_px": 25,
+    "prefer_topmost": true,
+    "prefer_last_stacked": true,
+    "frontmost_guard_px": 200,
+    "perpendicular_overlap_min": 0.2,
+    "cross_monitor": false,
+    "debug_enabled": false
   },
   "focus_border": {
     "enabled": true,
-    "border_color": "0x357EC7",
-    "move_mode_color": "0x2ECC71",
+    "border_color": "#357EC7",
+    "move_mode_color": "#2ECC71",
     "border_thickness": 4,
     "corner_radius": 12,
     "update_interval_ms": 20
   },
   "helper": {
-    "enabled": true
+    "enabled": true,
+    "overlay_opacity": 200
   },
   "reload": {
     "enabled": true,

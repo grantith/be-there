@@ -3,6 +3,8 @@
 
 #Include src/lib/JXON.ahk
 #Include src/lib/config_loader.ahk
+#Include src/lib/state_store.ahk
+#Include src/lib/focus_or_run.ahk
 #Include src/lib/command_toast.ahk
 #Include src/lib/window_inspector.ahk
 
@@ -17,6 +19,7 @@ if (config_errors.Length) {
     LogConfigErrors(config_errors, config_dir "\config.errors.log", config_path)
     ExitApp
 }
+global AppState := LoadState()
 InitCommandToast()
 
 super_key := Config["super_key"]
@@ -63,11 +66,14 @@ SetWinDelay(-1)
 window_nav_modifier := super_key
 
 #Include src/lib/window_manager.ahk
-#Include src/lib/focus_or_run.ahk
+#Include src/lib/directional_focus.ahk
 #Include src/lib/focus_border.ahk
+#Include src/lib/window_walker.ahk
 #Include src/hotkeys/global_hotkey.ahk
 #Include src/hotkeys/apps.ahk
 #Include src/hotkeys/window.ahk
+#Include src/hotkeys/directional_focus.ahk
+#Include src/hotkeys/window_walker.ahk
 #Include src/hotkeys/unbound.ahk
 
 DefaultConfig() {
@@ -99,6 +105,16 @@ DefaultConfig() {
             "cycle_app_windows_hotkey", "c",
             "center_width_cycle_hotkey", "Space"
         ),
+        "window_selector", Map(
+            "enabled", true,
+            "hotkey", "w",
+            "max_results", 12,
+            "title_preview_len", 60,
+            "match_title", true,
+            "match_exe", true,
+            "include_minimized", true,
+            "close_on_focus_loss", true
+        ),
         "window_manager", Map(
             "grid_size", 3,
             "margins", Map(
@@ -106,18 +122,31 @@ DefaultConfig() {
                 "left", 4,
                 "right", 4
             ),
+            "gap_px", 0,
             "exceptions_regex", "(Shell_TrayWnd|Shell_SecondaryTrayWnd|WorkerW|XamlExplorerHostIslandWindow)"
+        ),
+        "directional_focus", Map(
+            "enabled", true,
+            "stacked_overlap_threshold", 0.5,
+            "stack_tolerance_px", 25,
+            "prefer_topmost", true,
+            "prefer_last_stacked", true,
+            "frontmost_guard_px", 200,
+            "perpendicular_overlap_min", 0.2,
+            "cross_monitor", false,
+            "debug_enabled", false
         ),
         "focus_border", Map(
             "enabled", true,
-            "border_color", "0x357EC7",
-            "move_mode_color", "0x2ECC71",
+            "border_color", "#357EC7",
+            "move_mode_color", "#2ECC71",
             "border_thickness", 4,
             "corner_radius", 12,
             "update_interval_ms", 20
         ),
         "helper", Map(
-            "enabled", true
+            "enabled", true,
+            "overlay_opacity", 200
         ),
         "reload", Map(
             "enabled", true,

@@ -1,12 +1,22 @@
-global Config
+global Config, AppState
 global command_helper_enabled := false
 global command_toast_gui := ""
 global command_toast_text := ""
 global command_toast_visible := false
+global command_toast_view_key := ""
+global command_toast_apps_list := ""
+global command_toast_actions_list := ""
+global command_toast_image_list := ""
+global command_toast_icon_cache := Map()
+global command_toast_default_icon_index := 0
+global command_toast_last_mode := ""
+global command_toast_normal_refresh_pending := false
 
 InitCommandToast() {
-    global Config, command_helper_enabled
+    global Config, AppState, command_helper_enabled
     command_helper_enabled := Config["helper"]["enabled"]
+    if (AppState is Map && AppState.Has("command_helper_enabled"))
+        command_helper_enabled := AppState["command_helper_enabled"]
 }
 
 UpdateCommandToastVisibility() {
@@ -24,21 +34,38 @@ UpdateCommandToastVisibility() {
 }
 
 ShowCommandToast() {
-    global command_helper_enabled, command_toast_gui, command_toast_text, command_toast_visible
+    global command_helper_enabled, command_toast_gui, command_toast_visible, command_toast_view_key, command_toast_last_mode, command_toast_normal_refresh_pending
     if !command_helper_enabled
         return
 
-    text := BuildCommandToastText()
-    if (text = "")
+    model := BuildCommandToastModel()
+    if !(model is Map) || !model.Has("key") || (model["key"] = "")
         return
 
-    if !command_toast_gui {
-        command_toast_gui := Gui("+AlwaysOnTop -Caption +ToolWindow +Border", "be-there Command Overlay")
-        command_toast_gui.SetFont("s10", "Consolas")
-        command_toast_text := command_toast_gui.AddText("w420", text)
-    } else if (command_toast_text.Text != text) {
-        command_toast_text.Text := text
+    if (model["mode"] = "normal" && command_toast_last_mode != "normal") {
+        command_toast_view_key := ""
+        command_toast_normal_refresh_pending := true
     }
+
+    if !command_toast_gui || (command_toast_view_key != model["key"]) {
+        if command_toast_gui
+            command_toast_gui.Destroy()
+        command_toast_gui := ""
+        command_toast_text := ""
+        command_toast_apps_list := ""
+        command_toast_actions_list := ""
+        command_toast_image_list := ""
+        command_toast_icon_cache := Map()
+        command_toast_default_icon_index := 0
+        CreateCommandToastGui(model)
+        command_toast_view_key := model["key"]
+    } else if (model["mode"] = "normal" && command_toast_normal_refresh_pending) {
+        ; defer refresh until after show to avoid flicker
+    }
+
+    opacity := NormalizeOverlayOpacity()
+    if (opacity < 255)
+        WinSetTransparent(opacity, command_toast_gui)
 
     command_toast_gui.Show("NoActivate")
     command_toast_gui.GetPos(&x, &y, &w, &h)
@@ -58,7 +85,90 @@ ShowCommandToast() {
     pos_x := Max(min_x, Min(pos_x, max_x))
     pos_y := Max(min_y, Min(pos_y, max_y))
     command_toast_gui.Show("NoActivate x" pos_x " y" pos_y)
+    if (model["mode"] = "normal" && command_toast_normal_refresh_pending) {
+        RefreshCommandToastIcons(model)
+        command_toast_normal_refresh_pending := false
+    }
     command_toast_visible := true
+    command_toast_last_mode := model["mode"]
+}
+
+CreateCommandToastGui(model) {
+    global command_toast_gui, command_toast_text, command_toast_apps_list, command_toast_actions_list, command_toast_image_list
+    command_toast_gui := Gui("+AlwaysOnTop -Caption +ToolWindow +Border", "be-there Command Overlay")
+    command_toast_gui.MarginX := 12
+    command_toast_gui.MarginY := 10
+    opacity := NormalizeOverlayOpacity()
+    if (opacity < 255)
+        WinSetTransparent(opacity, command_toast_gui)
+
+    command_toast_gui.SetFont("s10 w600", "Segoe UI")
+    command_toast_gui.AddText("xm", model["title"])
+
+    GetCommandToastWorkArea(&work_left, &work_top, &work_right, &work_bottom)
+    work_w := work_right - work_left
+    work_h := work_bottom - work_top
+    width_ratio := (work_w > 2000) ? 0.15 : 0.25
+    overlay_width := Round(ClampValue(work_w * width_ratio, 380, 640))
+    row_height := 22
+    apps_rows_max := ClampValue(Floor((work_h * 0.22) / row_height), 6, 12)
+    actions_rows_max := ClampValue(Floor((work_h * 0.5) / row_height), 10, 26)
+
+    if (model["mode"] = "normal") {
+        command_toast_gui.SetFont("s9 w600", "Segoe UI")
+        command_toast_gui.AddText("xm y+6", "Apps")
+        command_toast_gui.SetFont("s9", "Segoe UI")
+
+        row_count := Max(1, Min(apps_rows_max, model["apps"].Length))
+        command_toast_apps_list := command_toast_gui.AddListView("xm w" overlay_width " r" row_count " -Multi NoSortHdr", ["Key", "App"])
+        command_toast_image_list := IL_Create(16)
+        command_toast_default_icon_index := EnsureDefaultAppIcon()
+        command_toast_apps_list.SetImageList(command_toast_image_list, 1)
+        apps_key_width := Round(ClampValue(overlay_width * 0.2, 80, 140))
+        command_toast_apps_list.ModifyCol(1, apps_key_width)
+        command_toast_apps_list.ModifyCol(2, overlay_width - apps_key_width - 20)
+
+        for _, app in model["apps"] {
+            icon_index := GetAppIconIndex(app["icon_path"])
+            command_toast_apps_list.Add("Icon" icon_index, app["hotkey"], app["label"])
+        }
+
+        command_toast_gui.SetFont("s9", "Segoe UI")
+        rows := model["rows"]
+        row_count := Max(1, Min(actions_rows_max, rows.Length))
+        command_toast_actions_list := command_toast_gui.AddListView("xm y+6 w" overlay_width " r" row_count " -Multi NoSortHdr", ["Key", "Action"])
+        actions_key_width := Round(ClampValue(overlay_width * 0.45, 180, 320))
+        command_toast_actions_list.ModifyCol(1, actions_key_width)
+        command_toast_actions_list.ModifyCol(2, overlay_width - actions_key_width - 20)
+
+        for _, row in rows {
+            command_toast_actions_list.Add("", row["key"], row["desc"])
+        }
+        return
+    }
+
+    command_toast_gui.SetFont("s9", "Consolas")
+    command_toast_text := command_toast_gui.AddText("xm y+6 w" overlay_width, model["body_text"])
+}
+
+RefreshCommandToastIcons(model) {
+    global command_toast_apps_list, command_toast_image_list, command_toast_icon_cache, command_toast_default_icon_index
+    if !command_toast_apps_list
+        return
+    if !(model is Map) || !model.Has("apps")
+        return
+
+    command_toast_icon_cache := Map()
+    command_toast_image_list := IL_Create(16)
+    command_toast_default_icon_index := EnsureDefaultAppIcon()
+    command_toast_apps_list.SetImageList(command_toast_image_list, 1)
+    command_toast_apps_list.Delete()
+    row_count := Max(1, Min(8, model["apps"].Length))
+    command_toast_apps_list.Opt("r" row_count)
+    for _, app in model["apps"] {
+        icon_index := GetAppIconIndex(app["icon_path"])
+        command_toast_apps_list.Add("Icon" icon_index, app["hotkey"], app["label"])
+    }
 }
 
 HideCommandToast() {
@@ -70,8 +180,12 @@ HideCommandToast() {
 }
 
 ToggleCommandHelper() {
-    global command_helper_enabled
+    global command_helper_enabled, AppState
     command_helper_enabled := !command_helper_enabled
+    if !(AppState is Map)
+        AppState := Map()
+    AppState["command_helper_enabled"] := command_helper_enabled
+    SaveState(AppState)
     status := command_helper_enabled ? "enabled" : "disabled"
     TrayTip("", "")
     TrayTip("be-there", "Command overlay " status, 2)
@@ -108,58 +222,192 @@ ConvertMonitorHandleToNumber(handle) {
     }
 }
 
-BuildCommandToastText() {
+BuildCommandToastModel() {
     global Config
     is_command_mode := ReloadModeActive()
     is_move_mode := Window.IsMoveMode()
-    lines := []
-    lines.Push("be-there")
-    lines.Push("")
-    key_width := 16
+    key_width := 22
+    model := Map()
 
     if is_move_mode {
-        lines.Push("Move Mode")
+        lines := []
         lines.Push(FormatRow("h/j/k/l", "move window", key_width))
         lines.Push(FormatRow(Config["window"]["move_mode"]["cancel_key"], "exit move mode", key_width))
-        return StrJoin(lines, "`n")
+        model["mode"] := "move"
+        model["title"] := "Move Mode"
+        model["body_text"] := StrJoin(lines, "`n")
+        model["key"] := "move|" model["body_text"]
+        return model
     }
 
     if is_command_mode {
-        lines.Push("Command Mode")
+        lines := []
         lines.Push(FormatRow("r", "reload config", key_width))
         lines.Push(FormatRow("e", "open config file", key_width))
         lines.Push(FormatRow("i", "window inspector", key_width))
-        lines.Push(FormatRow("n", "toggle helper", key_width))
+        lines.Push(FormatRow("n", "toggle command overlay", key_width))
         lines.Push(FormatRow("w", "new window (active app)", key_width))
-        lines.Push(FormatRow("Esc", "exit command mode", key_width))
-        return StrJoin(lines, "`n")
+        lines.Push(FormatRow("Esc/super", "exit command mode", key_width))
+        model["mode"] := "command"
+        model["title"] := "Command Mode"
+        model["body_text"] := StrJoin(lines, "`n")
+        model["key"] := "command|" model["body_text"]
+        return model
     }
 
-    lines.Push("Apps")
-    lines.Push("  " PadRight("Key", key_width) "  App")
-    lines.Push("  " RepeatChar("-", key_width) "  " RepeatChar("-", 16))
-    for _, app in Config["apps"] {
-        lines.Push("  " PadRight(app["hotkey"], key_width) "  " app["id"])
+    model["mode"] := "normal"
+    model["title"] := "be-there"
+    model["apps"] := BuildAppRows()
+    model["rows"] := BuildCommandToastRows(key_width)
+    model["key"] := "normal|" BuildCommandToastRowsKey(model["rows"]) "|" BuildAppsKey(model["apps"])
+    return model
+}
+
+BuildCommandToastRows(key_width := 16) {
+    global Config
+    rows := []
+    rows.Push(Map("key", "Window", "desc", ""))
+    rows.Push(Map("key", "super+arrows", "desc", "resize"))
+    rows.Push(Map("key", "super+shift+h/j/k/l", "desc", "resize center"))
+    rows.Push(Map("key", "super+ctrl+h/j/k/l", "desc", "move"))
+    rows.Push(Map("key", "super+m", "desc", "maximize"))
+    rows.Push(Map("key", "alt+-", "desc", "minimize"))
+    rows.Push(Map("key", "super+q", "desc", "close"))
+    rows.Push(Map("key", "super+" Config["window"]["cycle_app_windows_hotkey"], "desc", "cycle app windows"))
+    if Config.Has("window_selector") && Config["window_selector"]["enabled"] {
+        rows.Push(Map("key", "super+" Config["window_selector"]["hotkey"], "desc", "window selector"))
     }
-    lines.Push("")
-    lines.Push("Window")
-    lines.Push(FormatRow("arrows", "resize", key_width))
-    lines.Push(FormatRow("shift+h/j/k/l", "resize center", key_width))
-    lines.Push(FormatRow("ctrl+h/j/k/l", "move", key_width))
-    lines.Push(FormatRow("m", "maximize", key_width))
-    lines.Push(FormatRow("q", "close", key_width))
-    lines.Push(FormatRow(Config["window"]["cycle_app_windows_hotkey"], "cycle app windows", key_width))
-    lines.Push("")
-    lines.Push("Global Hotkeys")
+    if Config.Has("directional_focus") && Config["directional_focus"]["enabled"] {
+        rows.Push(Map("key", "alt+h/l", "desc", "focus left/right"))
+        rows.Push(Map("key", "alt+j/k", "desc", "focus down/up"))
+        rows.Push(Map("key", "alt+[ / ]", "desc", "cycle stacked"))
+    }
+    rows.Push(Map("key", "", "desc", ""))
+    rows.Push(Map("key", "Global Hotkeys", "desc", ""))
     for _, hotkey_config in Config["global_hotkeys"] {
         if hotkey_config["enabled"]
-            lines.Push(FormatRow(hotkey_config["hotkey"], hotkey_config["send_keys"], key_width))
+            rows.Push(Map("key", hotkey_config["hotkey"], "desc", hotkey_config["send_keys"]))
     }
-    lines.Push("")
-    lines.Push("Command Mode")
-    lines.Push(FormatRow(Config["reload"]["mode_hotkey"], "enter command mode", key_width))
+    rows.Push(Map("key", "", "desc", ""))
+    rows.Push(Map("key", "Command Mode", "desc", ""))
+    rows.Push(Map("key", Config["reload"]["mode_hotkey"], "desc", "enter command mode"))
+    return rows
+}
 
-    return StrJoin(lines, "`n")
+BuildCommandToastRowsKey(rows) {
+    key := ""
+    for _, row in rows {
+        key .= row["key"] "|" row["desc"] "||"
+    }
+    return key
+}
+
+BuildAppRows() {
+    global Config
+    rows := []
+    for _, app in Config["apps"] {
+        icon_path := ResolveAppIconPath(app)
+        rows.Push(Map(
+            "hotkey", app["hotkey"],
+            "label", app["id"],
+            "icon_path", icon_path
+        ))
+    }
+    return rows
+}
+
+BuildAppsKey(apps) {
+    key := ""
+    for _, app in apps {
+        key .= app["hotkey"] "|" app["label"] "|" app["icon_path"] "||"
+    }
+    return key
+}
+
+ResolveAppIconPath(app) {
+    if !(app is Map)
+        return ""
+    if app.Has("win_title") {
+        path := FindAppWindowPath(app["win_title"])
+        if (path != "")
+            return path
+    }
+    if app.Has("run") {
+        path := ResolveRunPath(app["run"], app)
+        if path && FileExist(path)
+            return path
+    }
+    return ""
+}
+
+FindAppWindowPath(win_title) {
+    if !win_title
+        return ""
+    hwnds := WinGetList(win_title)
+    if (hwnds.Length = 0)
+        return ""
+
+    for _, hwnd in hwnds {
+        if (InStr(win_title, "explorer.exe")) {
+            class_name := WinGetClass("ahk_id " hwnd)
+            if (class_name = "Progman" || class_name = "WorkerW" || class_name = "Shell_TrayWnd")
+                continue
+        }
+        ex_style := WinGetExStyle("ahk_id " hwnd)
+        if (ex_style & 0x80) || (ex_style & 0x8000000)
+            continue
+        if !(WinGetStyle("ahk_id " hwnd) & 0x10000000)
+            continue
+        try {
+            path := WinGetProcessPath("ahk_id " hwnd)
+            if path
+                return path
+        } catch {
+        }
+    }
+    return ""
+}
+
+GetAppIconIndex(path) {
+    global command_toast_image_list, command_toast_icon_cache, command_toast_default_icon_index
+    if (path != "" && command_toast_icon_cache.Has(path))
+        return command_toast_icon_cache[path]
+
+    if (path = "" || !FileExist(path))
+        return command_toast_default_icon_index
+
+    icon_index := 0
+    try icon_index := IL_Add(command_toast_image_list, path, 1)
+    if (!icon_index)
+        icon_index := command_toast_default_icon_index
+
+    if (path != "")
+        command_toast_icon_cache[path] := icon_index
+    return icon_index
+}
+
+EnsureDefaultAppIcon() {
+    global command_toast_image_list
+    icon_index := 0
+    try icon_index := IL_Add(command_toast_image_list, "shell32.dll", 1)
+    if (!icon_index)
+        icon_index := 1
+    return icon_index
+}
+
+NormalizeOverlayOpacity() {
+    global Config
+    opacity := 255
+    if Config.Has("helper") && Config["helper"].Has("overlay_opacity")
+        opacity := Config["helper"]["overlay_opacity"]
+    if !IsNumber(opacity)
+        opacity := 255
+    opacity := Floor(opacity)
+    if (opacity < 0)
+        opacity := 0
+    if (opacity > 255)
+        opacity := 255
+    return opacity
 }
 
 StrJoin(items, sep) {
@@ -187,4 +435,8 @@ RepeatChar(char, count) {
     loop count
         output .= char
     return output
+}
+
+ClampValue(value, min_value, max_value) {
+    return Max(min_value, Min(value, max_value))
 }

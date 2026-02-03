@@ -196,6 +196,25 @@ CenterWidthCycle(*) {
     mw := mx2 - mx1
     mh := my2 - my1
 
+    left_margin := Screen.left_margin
+    right_margin := Screen.right_margin
+    top_margin := Screen.top_margin
+    gap_px := Config["window_manager"]["gap_px"]
+
+    mx1 += left_margin
+    mw := mw - left_margin - right_margin
+    mh := mh - top_margin
+
+    if (gap_px > 0) {
+        mx1 += gap_px
+        my1 += gap_px
+        mw -= gap_px * 2
+        mh -= gap_px * 2
+    }
+
+    if (mw <= 0 || mh <= 0)
+        return
+
     if (state = 0) {
         ; center 1/3
         w := mw / 3
@@ -207,14 +226,7 @@ CenterWidthCycle(*) {
         w := mw * 2 / 3
     }
 
-    left_margin := Screen.left_margin
-    right_margin := Screen.right_margin
-    top_margin := Screen.top_margin
-
-    mx1 += left_margin
-    mw := mw - left_margin - right_margin
-    mh := mh - top_margin
-
+    w := Min(w, mw)
     x := mx1 + (mw - w) / 2
     y := my1 + top_margin
 
@@ -246,6 +258,14 @@ CloseWindow(*) {
     if !hwnd
         return
     WinClose "ahk_id " hwnd
+}
+
+MinimizeWindow(*) {
+    hwnd := WinExist("A")
+    if !hwnd
+        return
+    WinMinimize "ahk_id " hwnd
+    ActivateMostRecentWindow(hwnd)
 }
 
 CycleAppWindows(*) {
@@ -295,6 +315,8 @@ Hotkey("q", CloseWindow)
 Hotkey(cycle_app_windows_hotkey, CycleAppWindows)
 HotIf
 
+Hotkey("!-", MinimizeWindow)
+
 if move_mode_enabled {
     HotIf Window.IsMoveMode
     Hotkey("h", (*) => MoveActiveWindow(-move_step, 0))
@@ -308,4 +330,23 @@ if move_mode_enabled {
 ExitMoveMode() {
     Window.SetMoveMode(false)
     UpdateCommandToastVisibility()
+}
+
+ActivateMostRecentWindow(exclude_hwnd := 0) {
+    z_list := WinGetList()
+    for _, hwnd in z_list {
+        if (hwnd = exclude_hwnd)
+            continue
+        if Window.IsException("ahk_id " hwnd)
+            continue
+        if (WinGetMinMax("ahk_id " hwnd) = -1)
+            continue
+        ex_style := WinGetExStyle("ahk_id " hwnd)
+        if (ex_style & 0x80) || (ex_style & 0x8000000)
+            continue
+        if !(WinGetStyle("ahk_id " hwnd) & 0x10000000)
+            continue
+        WinActivate "ahk_id " hwnd
+        return
+    }
 }

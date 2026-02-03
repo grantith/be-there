@@ -52,6 +52,16 @@ ConfigSchema() {
             "cycle_app_windows_hotkey", "string",
             "center_width_cycle_hotkey", "string"
         ),
+        "window_selector", Map(
+            "enabled", "bool",
+            "hotkey", "string",
+            "max_results", "number",
+            "title_preview_len", "number",
+            "match_title", "bool",
+            "match_exe", "bool",
+            "include_minimized", "bool",
+            "close_on_focus_loss", "bool"
+        ),
         "window_manager", Map(
             "grid_size", "number",
             "margins", Map(
@@ -59,7 +69,19 @@ ConfigSchema() {
                 "left", "number",
                 "right", "number"
             ),
+            "gap_px", "number",
             "exceptions_regex", "string"
+        ),
+        "directional_focus", Map(
+            "enabled", "bool",
+            "stacked_overlap_threshold", "number",
+            "stack_tolerance_px", "number",
+            "prefer_topmost", "bool",
+            "prefer_last_stacked", "bool",
+            "frontmost_guard_px", "number",
+            "perpendicular_overlap_min", "number",
+            "cross_monitor", "bool",
+            "debug_enabled", "bool"
         ),
         "focus_border", Map(
             "enabled", "bool",
@@ -70,7 +92,8 @@ ConfigSchema() {
             "update_interval_ms", "number"
         ),
         "helper", Map(
-            "enabled", "bool"
+            "enabled", "bool",
+            "overlay_opacity", "number"
         ),
         "reload", Map(
             "enabled", "bool",

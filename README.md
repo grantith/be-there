@@ -4,7 +4,7 @@ A window manager written in AutoHotkey v2.
 The aim is a low-friction workflow: a single super modifier, mnemonic app keys, and fast window actions. Alt+Tab and Win+Tab still work, but you will hardly use them
 
 ## Contents
-- [What This Does](#what-this-does)
+- [Overview](#overview)
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
 - [Default Config Keys](#default-config-keys)
@@ -17,19 +17,18 @@ The aim is a low-friction workflow: a single super modifier, mnemonic app keys, 
 - [Layout](#layout)
 - [Third-Party](#third-party)
 
-## What This Does
+## Overview
 
 > [!NOTE]
-> CapsLock is the default super key.
+> CapsLock is the default super key, because who needs it?
+
+### Features
 
 
-Show the [Command Overlay](#command-overlay) when the super key is held.
-![Alt text](docs/assets/command_overlay.png)
-
-Jump focus to an app or launch it with `super + [letter]`.
+Launch-or-focus a program with `super + [letter]`, or directionally change window focus with `alt + h/l/j/k` (left, right, down, up) and `alt + [` / `alt + ]` for back/forward in a stack.
 ![Alt text](docs/assets/focus.gif)
 
-Cycle centered window widths with `super + space`.
+Cycle centered window widths with `super + spacebar`.
 ![Alt text](docs/assets/center-cycle.gif)
 
 Maximizes/restores with `super + m`.
@@ -44,12 +43,22 @@ Freely move a window with double tap super + h/j/k/l
 Resize edges with `super + shift + h/j/k/l`.
 ![Alt text](docs/assets/resize.gif)
 
+Show the [Command Overlay](#command-overlay) when the super key is held. Disable through command mode.
+![Alt text](docs/assets/command_overlay.png)
+
+Use the "window switcher" (like powertoys window walker) with `super + w`.
+![Alt text](docs/assets/window_switcher.png)
+
 Other
-- `super + alt` send `ctrl + tab` (configurable via `global_hotkeys`)
-- `super + c` to cycle through windows of the same app
+- `super + alt` sends `ctrl + tab` (configurable via `global_hotkeys`)
+- `super + c` cycle through windows of the same app
+- `super + w` open Window Selector (fuzzy find open windows)
+- `alt + h/l` move window focus left/right
+- `alt + j/k` move window focus down/up (non-stacked)
+- `alt + [` / `alt + ]` move window focus forward/back through stacked windows
 
 Enter Command Mode with `super + ;`.
-- `r` to reload app/config
+- `r` to reload program/config
 - `e` to open config file
 - `w` opens a new window for the active program, if the program supports it
 - `n` toggles the command overlay on or off
@@ -60,7 +69,7 @@ Enter Command Mode with `super + ;`.
 
 ### Quick start
 
-- Start the program and enter command mode with `super + ;`.
+- Start the program and enter command mode with `super + ;`. The binary is not currently signed and you will be warned by Windows. Clone and use `main.ahk` directly as an alternative.
 - Press `e` to open the config file. You can also find it manually in `~/.config/be-there/config.json`.
 - After making changes to your config you can reload the config (the entire program, actually) with `r` while in command mode.
 
@@ -70,7 +79,9 @@ Enter Command Mode with `super + ;`.
 - `apps[].run_paths`: optional list of directories to search for the executable.
 - `global_hotkeys`: array of scoped hotkey bindings (set `target_exes` empty for global use).
 - `window`: resize/move steps and hotkeys (including move mode).
-- `window_manager`: grid size, margins, and ignored window classes.
+- `window_selector`: Window Selector settings (hotkey, match fields, display limits).
+- `window_manager`: grid size, margins, gaps, and ignored window classes.
+- `directional_focus`: directional focus settings (stacked threshold, stack tolerance, topmost preference, last-stacked preference, frontmost guard, perpendicular overlap min, cross-monitor, debug).
 - `focus_border`: overlay appearance and update interval.
 - `helper`: command overlay settings.
 - `reload`: hotkey and file watch settings for config reload.
@@ -93,9 +104,8 @@ Enter Command Mode with `super + ;`.
 - Use Refresh to update the list; Copy Selected/All or Export to save results.
 
 ## Known Limitations
-- This has not been tested with multi-monitor setups.
-- Dynamic grid ratios need to be added to support more screen sizes and resolutions for the window-snap function.
-- Some apps (e.g., Discord) launch via `Update.exe` and keep versioned subfolders, which makes auto-resolution unreliable.
+- This has not been tested with multi-monitor setups or much outside of ultra-wide monitors.
+- Some apps (e.g., Discord) launch via `Update.exe` and keep versioned subfolders, which makes auto-resolution unreliable for launching or focusing more challenging.
 - For some apps that minimize or close to the system tray, it's recommended you disable that in the program. Otherwise you can try to set `apps[].run` to a stable full path (or use `run_paths`) in your config.
 - Windows with elevated permissions may ignore be-there hotkeys unless be-there is run as Administrator.
 
