@@ -115,17 +115,24 @@ class Window
         /**
          * get width and height of grid point closest to the window
          */
-        loop Window.grid_size
+        grid_w_max := Max(Window.grid_size, 4)
+        grid_h_max := Window.grid_size
+
+        loop grid_w_max
         {
             plot_width  := screenWidth  // A_Index                      ; screen width divided by 1, 2, 3, etc.
-            plot_height := screenHeight // A_Index                      ; screen height divided by 1, 2, 3, etc.
             diffW := Abs(plot_width  - w)                               ; difference between grid plot width and window width
-            diffH := Abs(plot_height - h)                               ; difference between grid plot height and window height
 
             if diffW <= closest_in_width {                              ; if difference is less than the last difference calculated
                 closest_in_width := diffW                               ; remember new value for next iteration
                 grid_w := A_Index                                       ; remember width in grid
             }
+        }
+
+        loop grid_h_max
+        {
+            plot_height := screenHeight // A_Index                      ; screen height divided by 1, 2, 3, etc.
+            diffH := Abs(plot_height - h)                               ; difference between grid plot height and window height
 
             if diffH <= closest_in_height {                             ; if difference is less than the last difference calculated
                 closest_in_height := diffH                              ; remember new value for next iteration
@@ -185,11 +192,17 @@ class Window
      */
     static MoveLeft(coords)
     {
+        side_max_width := 4
+        if (coords.width > side_max_width) {
+            coords.width := side_max_width
+            coords.x := Min(coords.x, coords.width)
+        }
+
         if --coords.x < this.min_grid                                   ; if x-1 coord is out of grid bounds
         {
             coords.x := this.min_grid                                   ; set x coord to minimum grid
 
-            if coords.width = this.grid_size                            ; if width is at max size
+            if coords.width = side_max_width                            ; if width is at max size
             {
                 coords.y := 1                                           ; set y coord to top of screen
 
@@ -201,7 +214,7 @@ class Window
                 WinGetPosEx(,, &w,, 'A')                                ; get window width
                 if w <= Screen.width // coords.width                    ; if window can get smaller (prevents gui guides from thinking window got smaller)
                 or Window.IsMaximized(coords)                           ; or window is maximized
-                    coords.width := Min(++coords.width, this.grid_size) ; increase width of window if there is room
+                    coords.width := Min(++coords.width, side_max_width) ; increase width of window if there is room
             }
         }
         Window.UpdatePosition(coords)                                   ; update the window position
@@ -210,9 +223,15 @@ class Window
 
     static MoveRight(coords)
     {
+        side_max_width := 4
+        if (coords.width > side_max_width) {
+            coords.width := side_max_width
+            coords.x := Min(coords.x, coords.width)
+        }
+
         if ++coords.x > coords.width                                    ; if x+1 coord is greater than window width
         {
-            if coords.x > this.grid_size                                ; if x coord is out of grid bounds
+            if coords.x > side_max_width                                ; if x coord is out of grid bounds
             {
                 coords.y := 1                                           ; set y coord to top of screen
 
@@ -225,7 +244,7 @@ class Window
                 WinGetPosEx(,, &w,, 'A')                                ; get window width
                 if w <= Screen.width // coords.width                    ; if window can get smaller (prevents gui guides from "thinking" window got smaller)
                 or Window.IsMaximized(coords)                           ; or window is maximized
-                    coords.width := Min(++coords.width, this.grid_size) ; increase width of window if there is room
+                    coords.width := Min(++coords.width, side_max_width) ; increase width of window if there is room
 
                 else coords.x--                                         ; undo x increase so wrong gui guides aren't created in some scenarios
             }
