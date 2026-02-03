@@ -1,13 +1,11 @@
 name: dev-build
 
 on:
-  push:
+  pull_request:
     branches:
       - main
-      - dev
     paths:
       - "src/**"
-  workflow_dispatch:
 
 jobs:
   build:
@@ -22,10 +20,7 @@ jobs:
         id: src_changes
         shell: pwsh
         run: |
-          $base = "${{ github.event.before }}"
-          if (-not $base -or $base -eq "0000000000000000000000000000000000000000") {
-            $base = "HEAD~1"
-          }
+          $base = "${{ github.event.pull_request.base.sha }}"
           $changed = git diff --name-only $base $env:GITHUB_SHA | Where-Object { $_ -like "src/*" }
           $hasChanges = $changed.Count -gt 0
           "has_src_changes=$hasChanges" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
