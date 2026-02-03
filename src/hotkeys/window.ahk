@@ -196,6 +196,25 @@ CenterWidthCycle(*) {
     mw := mx2 - mx1
     mh := my2 - my1
 
+    left_margin := Screen.left_margin
+    right_margin := Screen.right_margin
+    top_margin := Screen.top_margin
+    gap_px := Config["window_manager"]["gap_px"]
+
+    mx1 += left_margin
+    mw := mw - left_margin - right_margin
+    mh := mh - top_margin
+
+    if (gap_px > 0) {
+        mx1 += gap_px
+        my1 += gap_px
+        mw -= gap_px * 2
+        mh -= gap_px * 2
+    }
+
+    if (mw <= 0 || mh <= 0)
+        return
+
     if (state = 0) {
         ; center 1/3
         w := mw / 3
@@ -207,14 +226,7 @@ CenterWidthCycle(*) {
         w := mw * 2 / 3
     }
 
-    left_margin := Screen.left_margin
-    right_margin := Screen.right_margin
-    top_margin := Screen.top_margin
-
-    mx1 += left_margin
-    mw := mw - left_margin - right_margin
-    mh := mh - top_margin
-
+    w := Min(w, mw)
     x := mx1 + (mw - w) / 2
     y := my1 + top_margin
 

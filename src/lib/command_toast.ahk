@@ -257,6 +257,11 @@ BuildCommandToastBodyText(key_width := 16) {
     if Config.Has("window_selector") && Config["window_selector"]["enabled"] {
         lines.Push(FormatRow(Config["window_selector"]["hotkey"], "window selector", key_width))
     }
+    if Config.Has("directional_focus") && Config["directional_focus"]["enabled"] {
+        lines.Push(FormatRow("alt+h/l", "focus left/right", key_width))
+        lines.Push(FormatRow("alt+j/k", "focus down/up", key_width))
+        lines.Push(FormatRow("alt+[ / ]", "cycle stacked", key_width))
+    }
     lines.Push("")
     lines.Push("Global Hotkeys")
     for _, hotkey_config in Config["global_hotkeys"] {
