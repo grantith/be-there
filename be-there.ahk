@@ -4,6 +4,7 @@
 #Include src/lib/JXON.ahk
 #Include src/lib/config_loader.ahk
 #Include src/lib/state_store.ahk
+#Include src/lib/focus_or_run.ahk
 #Include src/lib/command_toast.ahk
 #Include src/lib/window_inspector.ahk
 
@@ -65,7 +66,6 @@ SetWinDelay(-1)
 window_nav_modifier := super_key
 
 #Include src/lib/window_manager.ahk
-#Include src/lib/focus_or_run.ahk
 #Include src/lib/focus_border.ahk
 #Include src/lib/window_walker.ahk
 #Include src/hotkeys/global_hotkey.ahk
@@ -131,7 +131,8 @@ DefaultConfig() {
             "update_interval_ms", 20
         ),
         "helper", Map(
-            "enabled", true
+            "enabled", true,
+            "overlay_opacity", 200
         ),
         "reload", Map(
             "enabled", true,

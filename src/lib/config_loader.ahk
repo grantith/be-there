@@ -80,7 +80,8 @@ ConfigSchema() {
             "update_interval_ms", "number"
         ),
         "helper", Map(
-            "enabled", "bool"
+            "enabled", "bool",
+            "overlay_opacity", "number"
         ),
         "reload", Map(
             "enabled", "bool",

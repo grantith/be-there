@@ -99,7 +99,8 @@
     "update_interval_ms": 20
   },
   "helper": {
-    "enabled": true
+    "enabled": true,
+    "overlay_opacity": 200
   },
   "reload": {
     "enabled": true,
