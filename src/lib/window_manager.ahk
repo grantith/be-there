@@ -30,6 +30,7 @@ class Window
      */
     static grid_size := Config["window_manager"]["grid_size"]
     static move_mode := false
+    static side_cycle_index := Map()
 
 
 
@@ -212,9 +213,7 @@ class Window
             else                                                        ; if width is less than max size
             {
                 WinGetPosEx(,, &w,, 'A')                                ; get window width
-                if w <= Screen.width // coords.width                    ; if window can get smaller (prevents gui guides from thinking window got smaller)
-                or Window.IsMaximized(coords)                           ; or window is maximized
-                    coords.width := Min(++coords.width, side_max_width) ; increase width of window if there is room
+                coords.width := Window.GetNextSideWidthFromCycle(w)
             }
         }
         Window.UpdatePosition(coords)                                   ; update the window position
@@ -242,14 +241,87 @@ class Window
             else                                                        ; if x coord is within grid
             {
                 WinGetPosEx(,, &w,, 'A')                                ; get window width
-                if w <= Screen.width // coords.width                    ; if window can get smaller (prevents gui guides from "thinking" window got smaller)
-                or Window.IsMaximized(coords)                           ; or window is maximized
-                    coords.width := Min(++coords.width, side_max_width) ; increase width of window if there is room
-
-                else coords.x--                                         ; undo x increase so wrong gui guides aren't created in some scenarios
+                coords.width := Window.GetNextSideWidthFromCycle(w)
+                coords.x := coords.width
             }
         }
         Window.UpdatePosition(coords)                                   ; update the window position
+    }
+
+    static GetSideWidthDivisors()
+    {
+        return [4.0, 3.0, 2.0, 1.5]
+    }
+
+    static GetNextSideWidthFromCycle(window_width)
+    {
+        hwnd := WinExist("A")
+        if !hwnd
+            return 2.0
+
+        screen_width := Screen.width
+        if (screen_width <= 0)
+            return 2.0
+
+        divisors := Window.GetSideWidthDivisors()
+        base_index := Window.GetClosestSideDivisorIndex(window_width, screen_width, divisors)
+        current_index := base_index
+        if Window.side_cycle_index.Has(hwnd) {
+            stored_index := Window.side_cycle_index[hwnd]
+            if (stored_index >= 1 && stored_index <= divisors.Length) {
+                if Window.IsWidthNearDivisor(window_width, screen_width, divisors[stored_index])
+                    current_index := stored_index
+            }
+        }
+
+        next_index := current_index + 1
+        if (next_index > divisors.Length)
+            next_index := 1
+
+        Window.side_cycle_index[hwnd] := next_index
+        return divisors[next_index]
+    }
+
+    static GetClosestSideDivisorIndex(window_width, screen_width, divisors)
+    {
+        closest_index := 1
+        closest_diff := Abs((screen_width / divisors[1]) - window_width)
+        for i, divisor in divisors {
+            diff := Abs((screen_width / divisor) - window_width)
+            if (diff < closest_diff) {
+                closest_diff := diff
+                closest_index := i
+            }
+        }
+        return closest_index
+    }
+
+    static IsWidthNearDivisor(window_width, screen_width, divisor, tolerance_px := 12)
+    {
+        expected := screen_width / divisor
+        return Abs(window_width - expected) <= tolerance_px
+    }
+
+    static GetNextSideWidthDivisor(window_width)
+    {
+        screen_width := Screen.width
+        if (screen_width <= 0)
+            return ""
+
+        divisors := Window.GetSideWidthDivisors()
+        closest_index := 1
+        closest_diff := Abs((screen_width / divisors[1]) - window_width)
+        for i, divisor in divisors {
+            diff := Abs((screen_width / divisor) - window_width)
+            if (diff < closest_diff) {
+                closest_diff := diff
+                closest_index := i
+            }
+        }
+
+        if (closest_index < divisors.Length)
+            return divisors[closest_index + 1]
+        return divisors[1]
     }
 
 
@@ -350,16 +422,28 @@ class Window
      */
     static Move(coords, hwnd := 'A')
     {
-        fractionX := Mod(100, coords.width)  != 0                       ; check if window / width isn't a whole number
-        fractionY := Mod(100, coords.height) != 0                       ; check if window / height isn't a whole number
+        width_is_int := IsInteger(coords.width)
+        height_is_int := IsInteger(coords.height)
 
-        x_pos  := (coords.x - 1) * (100 // coords.width)                ; get x position window should be in
-        y_pos  := (coords.y - 1) * (100 // coords.height)               ; get y position window should be in
+        if width_is_int {
+            fractionX := Mod(100, coords.width) != 0                    ; check if window / width isn't a whole number
+            x_pos := (coords.x - 1) * (100 // coords.width)             ; get x position window should be in
+            width := (100 // coords.width) +                            ; 100 / window width, rounded down
+                (fractionX and (coords.x = coords.width) ? 1 : 0)       ; add one if layout size isn't evenly divided by window and window is furthest right in the grid
+        } else {
+            width := 100 / coords.width
+            x_pos := (coords.x - 1) * width
+        }
 
-        width  := (100 // coords.width) +                               ; 100 / window width, rounded down
-            (fractionX and (coords.x = coords.width)  ? 1 : 0)          ; add one if layout size isn't evenly divided by window and window is furthest right in the grid
-        height := (100 // coords.height) +                              ; 100 / window height, rounded down
-            (fractionY and (coords.y = coords.height) ? 1 : 0)          ; add one if layout size isn't evenly divided by window and window is furthest bottom in the grid
+        if height_is_int {
+            fractionY := Mod(100, coords.height) != 0                   ; check if window / height isn't a whole number
+            y_pos := (coords.y - 1) * (100 // coords.height)            ; get y position window should be in
+            height := (100 // coords.height) +                          ; 100 / window height, rounded down
+                (fractionY and (coords.y = coords.height) ? 1 : 0)      ; add one if layout size isn't evenly divided by window and window is furthest bottom in the grid
+        } else {
+            height := 100 / coords.height
+            y_pos := (coords.y - 1) * height
+        }
 
         WinRestore(hwnd)                                                ; unmaximizes window if maximized
 
