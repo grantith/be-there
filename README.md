@@ -69,7 +69,7 @@ Enter Command Mode with `super + ;`.
 
 ### Quick start
 
-- Start the program and enter command mode with `super + ;`.
+- Start the program and enter command mode with `super + ;`. The binary is not currently signed and you will be warned by Windows. Clone and use `main.ahk` directly as an alternative.
 - Press `e` to open the config file. You can also find it manually in `~/.config/be-there/config.json`.
 - After making changes to your config you can reload the config (the entire program, actually) with `r` while in command mode.
 
