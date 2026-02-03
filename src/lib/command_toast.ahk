@@ -35,11 +35,12 @@ ShowCommandToast() {
         return
 
     if !command_toast_gui {
-        command_toast_gui := Gui("+AlwaysOnTop -Caption +ToolWindow +Border", "be-there Command Overlay")
-        command_toast_gui.SetFont("s10", "Consolas")
-        command_toast_text := command_toast_gui.AddText("w420", text)
+        CreateCommandToastGui(text)
     } else if (command_toast_text.Text != text) {
-        command_toast_text.Text := text
+        command_toast_gui.Destroy()
+        command_toast_gui := ""
+        command_toast_text := ""
+        CreateCommandToastGui(text)
     }
 
     command_toast_gui.Show("NoActivate")
@@ -61,6 +62,13 @@ ShowCommandToast() {
     pos_y := Max(min_y, Min(pos_y, max_y))
     command_toast_gui.Show("NoActivate x" pos_x " y" pos_y)
     command_toast_visible := true
+}
+
+CreateCommandToastGui(text) {
+    global command_toast_gui, command_toast_text
+    command_toast_gui := Gui("+AlwaysOnTop -Caption +ToolWindow +Border", "be-there Command Overlay")
+    command_toast_gui.SetFont("s10", "Consolas")
+    command_toast_text := command_toast_gui.AddText("w420", text)
 }
 
 HideCommandToast() {
