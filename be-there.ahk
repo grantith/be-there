@@ -3,6 +3,7 @@
 
 #Include src/lib/JXON.ahk
 #Include src/lib/config_loader.ahk
+#Include src/lib/state_store.ahk
 #Include src/lib/command_toast.ahk
 #Include src/lib/window_inspector.ahk
 
@@ -17,6 +18,7 @@ if (config_errors.Length) {
     LogConfigErrors(config_errors, config_dir "\config.errors.log", config_path)
     ExitApp
 }
+global AppState := LoadState()
 InitCommandToast()
 
 super_key := Config["super_key"]
@@ -65,9 +67,11 @@ window_nav_modifier := super_key
 #Include src/lib/window_manager.ahk
 #Include src/lib/focus_or_run.ahk
 #Include src/lib/focus_border.ahk
+#Include src/lib/window_walker.ahk
 #Include src/hotkeys/global_hotkey.ahk
 #Include src/hotkeys/apps.ahk
 #Include src/hotkeys/window.ahk
+#Include src/hotkeys/window_walker.ahk
 #Include src/hotkeys/unbound.ahk
 
 DefaultConfig() {
@@ -98,6 +102,16 @@ DefaultConfig() {
             ),
             "cycle_app_windows_hotkey", "c",
             "center_width_cycle_hotkey", "Space"
+        ),
+        "window_selector", Map(
+            "enabled", true,
+            "hotkey", "w",
+            "max_results", 12,
+            "title_preview_len", 60,
+            "match_title", true,
+            "match_exe", true,
+            "include_minimized", true,
+            "close_on_focus_loss", true
         ),
         "window_manager", Map(
             "grid_size", 3,

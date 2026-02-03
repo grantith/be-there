@@ -1,12 +1,14 @@
-global Config
+global Config, AppState
 global command_helper_enabled := false
 global command_toast_gui := ""
 global command_toast_text := ""
 global command_toast_visible := false
 
 InitCommandToast() {
-    global Config, command_helper_enabled
+    global Config, AppState, command_helper_enabled
     command_helper_enabled := Config["helper"]["enabled"]
+    if (AppState is Map && AppState.Has("command_helper_enabled"))
+        command_helper_enabled := AppState["command_helper_enabled"]
 }
 
 UpdateCommandToastVisibility() {
@@ -70,8 +72,12 @@ HideCommandToast() {
 }
 
 ToggleCommandHelper() {
-    global command_helper_enabled
+    global command_helper_enabled, AppState
     command_helper_enabled := !command_helper_enabled
+    if !(AppState is Map)
+        AppState := Map()
+    AppState["command_helper_enabled"] := command_helper_enabled
+    SaveState(AppState)
     status := command_helper_enabled ? "enabled" : "disabled"
     TrayTip("", "")
     TrayTip("be-there", "Command overlay " status, 2)
@@ -149,6 +155,9 @@ BuildCommandToastText() {
     lines.Push(FormatRow("m", "maximize", key_width))
     lines.Push(FormatRow("q", "close", key_width))
     lines.Push(FormatRow(Config["window"]["cycle_app_windows_hotkey"], "cycle app windows", key_width))
+    if Config.Has("window_selector") && Config["window_selector"]["enabled"] {
+        lines.Push(FormatRow(Config["window_selector"]["hotkey"], "window selector", key_width))
+    }
     lines.Push("")
     lines.Push("Global Hotkeys")
     for _, hotkey_config in Config["global_hotkeys"] {

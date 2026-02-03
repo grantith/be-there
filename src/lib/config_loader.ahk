@@ -52,6 +52,16 @@ ConfigSchema() {
             "cycle_app_windows_hotkey", "string",
             "center_width_cycle_hotkey", "string"
         ),
+        "window_selector", Map(
+            "enabled", "bool",
+            "hotkey", "string",
+            "max_results", "number",
+            "title_preview_len", "number",
+            "match_title", "bool",
+            "match_exe", "bool",
+            "include_minimized", "bool",
+            "close_on_focus_loss", "bool"
+        ),
         "window_manager", Map(
             "grid_size", "number",
             "margins", Map(

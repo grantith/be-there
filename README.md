@@ -4,7 +4,7 @@ A window manager written in AutoHotkey v2.
 The aim is a low-friction workflow: a single super modifier, mnemonic app keys, and fast window actions. Alt+Tab and Win+Tab still work, but you will hardly use them
 
 ## Contents
-- [What This Does](#what-this-does)
+- [Overview](#overview)
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
 - [Default Config Keys](#default-config-keys)
@@ -17,7 +17,7 @@ The aim is a low-friction workflow: a single super modifier, mnemonic app keys, 
 - [Layout](#layout)
 - [Third-Party](#third-party)
 
-## What This Does
+## Overview
 
 > [!NOTE]
 > CapsLock is the default super key.
@@ -25,6 +25,9 @@ The aim is a low-friction workflow: a single super modifier, mnemonic app keys, 
 
 Show the [Command Overlay](#command-overlay) when the super key is held.
 ![Alt text](docs/assets/command_overlay.png)
+
+Use the "window selector" (like powertoys window walker) with `super + w`.
+![Alt text](docs/assets/window_selector.png)
 
 Jump focus to an app or launch it with `super + [letter]`.
 ![Alt text](docs/assets/focus.gif)
@@ -47,6 +50,7 @@ Resize edges with `super + shift + h/j/k/l`.
 Other
 - `super + alt` send `ctrl + tab` (configurable via `global_hotkeys`)
 - `super + c` to cycle through windows of the same app
+- `super + w` to open Window Selector (fuzzy find open windows)
 
 Enter Command Mode with `super + ;`.
 - `r` to reload app/config
@@ -70,6 +74,7 @@ Enter Command Mode with `super + ;`.
 - `apps[].run_paths`: optional list of directories to search for the executable.
 - `global_hotkeys`: array of scoped hotkey bindings (set `target_exes` empty for global use).
 - `window`: resize/move steps and hotkeys (including move mode).
+- `window_selector`: Window Selector settings (hotkey, match fields, display limits).
 - `window_manager`: grid size, margins, and ignored window classes.
 - `focus_border`: overlay appearance and update interval.
 - `helper`: command overlay settings.
