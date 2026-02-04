@@ -20,6 +20,7 @@ if focus_border_enabled {
     ; ------------- User Settings -------------
     border_color := ParseHexColor(focus_config["border_color"])   ; Hex color (#RRGGBB)
     move_mode_color := ParseHexColor(focus_config["move_mode_color"]) ; Hex color (#RRGGBB)
+    command_mode_color := ParseHexColor(focus_config["command_mode_color"]) ; Hex color (#RRGGBB)
     border_thickness := Integer(focus_config["border_thickness"])      ; Border thickness in pixels
     corner_radius := Integer(focus_config["corner_radius"])        ; Corner roundness in pixels
     update_interval := Integer(focus_config["update_interval_ms"])      ; Throttle (ms) for focus border updates
@@ -42,7 +43,7 @@ if focus_border_enabled {
     ; UpdateBorder: Sends focus border updates to the helper process.
     ; -------------------------------
     UpdateBorder(*) {
-        global border_thickness, corner_radius, border_color, move_mode_color
+        global border_thickness, corner_radius, border_color, move_mode_color, command_mode_color
         global prev_hwnd, prev_ax, prev_ay, prev_aw, prev_ah
         global prev_color, prev_visible
         global flash_until, flash_color
@@ -86,7 +87,7 @@ if focus_border_enabled {
         if (flash_until > A_TickCount)
             desired_color := flash_color
         else if ReloadModeActive()
-            desired_color := 0xFFD400
+            desired_color := command_mode_color
         else
             desired_color := Window.IsMoveMode() ? move_mode_color : border_color
 

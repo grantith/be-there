@@ -71,7 +71,8 @@ Enter Command Mode with `super + ;`.
 
 - Start the program and enter command mode with `super + ;`. The binary is not currently signed and you will be warned by Windows. Clone and use `main.ahk` directly as an alternative.
 - The focus border uses `harken_focus_border_helper.exe` for smoother rendering; keep it next to `harken.exe` when using the compiled binary.
-- Press `e` to open the config file. You can also find it manually in `~/.config/Harken/config.json`.
+- Press `e` to open the config file. You can also find it manually in `~/.config/harken/harken.toml`.
+- The repository example lives at `config/config.example.toml`.
 - After making changes to your config you can reload the config (the entire program, actually) with `r` while in command mode.
 
 ### Default Config Keys
@@ -83,7 +84,7 @@ Enter Command Mode with `super + ;`.
 - `window_selector`: Window Selector settings (hotkey, match fields, display limits).
 - `window_manager`: grid size, margins, gaps, and ignored window classes.
 - `directional_focus`: directional focus settings (stacked threshold, stack tolerance, topmost preference, last-stacked preference, frontmost guard, perpendicular overlap min, cross-monitor, debug).
-- `focus_border`: overlay appearance and update interval.
+- `focus_border`: overlay appearance and update interval (including command mode color).
 - `helper`: command overlay settings.
 - `reload`: hotkey and file watch settings for config reload.
 

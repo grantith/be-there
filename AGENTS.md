@@ -10,7 +10,7 @@ No Copilot instructions found in `.github/copilot-instructions.md`.
 - Entry point: `harken.ahk`.
 - Source modules: `src/` (hotkeys, window management, UI helpers, config loader).
 - Tools: `tools/` (build script, inspector utilities).
-- Config example: `config/config.example.json` (user config lives outside the repo).
+- Config example: `config/config.example.toml` (user config lives outside the repo).
 
 ## Build / Lint / Test
 This repo does not currently use a formal test or lint framework.
@@ -70,7 +70,7 @@ Single test / focused run:
 - When adding config keys, update:
   - `DefaultConfig()` in `harken.ahk`
   - Schema in `src/lib/config_loader.ahk`
-  - `config/config.example.json`
+  - `config/config.example.toml`
   - `README.md`
 
 ### Hotkeys and window behavior
@@ -94,7 +94,7 @@ Single test / focused run:
 - Keep `README.md` and `AGENTS.md` aligned with current behavior.
 
 ## Suggested Manual Checks
-- Launch `harken.ahk` with a clean `config.json` and verify hotkeys.
+- Launch `harken.ahk` with a clean `harken.toml` and verify hotkeys.
 - Validate reload flow (normal hotkey and command mode).
 - Confirm Command Overlay and helper tools still open and update.
 - If touching config schema, ensure errors log correctly in `~/.config/harken/config.errors.log`.

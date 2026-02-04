@@ -112,7 +112,7 @@ $source_files = @(
     "harken.ahk",
     "src",
     "tools",
-    "config/config.example.json",
+    "config/config.example.toml",
     "README.md",
     "LICENSE",
     "LICENSES",
@@ -124,7 +124,7 @@ Compress-Archive -Path $source_files -DestinationPath $source_zip -Force
 $compiled_files = @(
     "$out_path/harken.exe",
     "tools",
-    "config/config.example.json",
+    "config/config.example.toml",
     "README.md",
     "LICENSE",
     "LICENSES",
@@ -133,6 +133,6 @@ $compiled_files = @(
 
 Write-Host "Built: $source_zip"
 
-$default_config = Join-Path $out_path "config.example.json"
-Get-Content "$repo_root/config/config.example.json" -Raw | Out-File -FilePath $default_config -Encoding UTF8
+$default_config = Join-Path $out_path "config.example.toml"
+Get-Content "$repo_root/config/config.example.toml" -Raw | Out-File -FilePath $default_config -Encoding UTF8
 Write-Host "Exported: $default_config"
