@@ -16,6 +16,13 @@ global focus_border_hook_object := 0
 global focus_border_hook_callback := 0
 global focus_border_last_update := 0
 global focus_border_update_pending := false
+global focus_border_use_ahk := false
+global focus_border_fallback_toast_shown := false
+global focus_border_gui_top := 0
+global focus_border_gui_bottom := 0
+global focus_border_gui_left := 0
+global focus_border_gui_right := 0
+global focus_border_ahk_color := ""
 if focus_border_enabled {
     ; ------------- User Settings -------------
     border_color := ParseHexColor(focus_config["border_color"])   ; Hex color (#RRGGBB)
@@ -121,11 +128,20 @@ StartFocusBorderHelper() {
     if focus_border_helper_pid
         return
     helper_path := ResolveFocusBorderHelperPath()
-    if !helper_path
+    if !helper_path {
+        EnableAhkFocusBorder("helper missing")
         return
+    }
     focus_border_helper_path := helper_path
-    Run('"' helper_path '"', "", "Hide", &focus_border_helper_pid)
+    try {
+        Run('"' helper_path '"', "", "Hide", &focus_border_helper_pid)
+    } catch {
+        EnableAhkFocusBorder("helper launch failed")
+        return
+    }
     focus_border_helper_hwnd := WaitForFocusBorderHelperWindow()
+    if !focus_border_helper_hwnd
+        EnableAhkFocusBorder("helper window not found")
 }
 
 StopFocusBorderHelper(*) {
@@ -140,6 +156,7 @@ StopFocusBorderHelper(*) {
 StopFocusBorderHooksAndHelper(*) {
     StopFocusBorderEventHooks()
     StopFocusBorderHelper()
+    StopAhkFocusBorder()
 }
 
 StartFocusBorderEventHooks(debounce_ms := 20) {
@@ -278,9 +295,14 @@ EnsureFocusBorderHelperWindow() {
 }
 
 SendFocusBorderUpdate(visible, x, y, w, h, color_hex, thickness, radius) {
+    global focus_border_use_ahk
+    if focus_border_use_ahk
+        return UpdateAhkFocusBorder(visible, x, y, w, h, color_hex, thickness)
     hwnd := EnsureFocusBorderHelperWindow()
-    if !hwnd
-        return false
+    if !hwnd {
+        EnableAhkFocusBorder("helper not running")
+        return UpdateAhkFocusBorder(visible, x, y, w, h, color_hex, thickness)
+    }
 
     payload := Map(
         "visible", visible,
@@ -294,6 +316,110 @@ SendFocusBorderUpdate(visible, x, y, w, h, color_hex, thickness, radius) {
     )
     json := Jxon_Dump(payload, 0)
     return SendCopyData(hwnd, json)
+}
+
+EnableAhkFocusBorder(reason := "") {
+    global focus_border_use_ahk, focus_border_fallback_toast_shown
+    if !focus_border_use_ahk
+        focus_border_use_ahk := true
+    if !focus_border_fallback_toast_shown {
+        message := "Focus border helper not found; using AHK border."
+        if reason
+            message := "Focus border helper not found; using AHK border (" reason ")."
+        TrayTip("harken", message, 4)
+        focus_border_fallback_toast_shown := true
+    }
+}
+
+EnsureAhkFocusBorderGuis() {
+    global focus_border_gui_top, focus_border_gui_bottom, focus_border_gui_left, focus_border_gui_right
+    if !focus_border_gui_top {
+        focus_border_gui_top := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20")
+        focus_border_gui_top.MarginX := 0
+        focus_border_gui_top.MarginY := 0
+        focus_border_gui_top.Show("Hide")
+    }
+    if !focus_border_gui_bottom {
+        focus_border_gui_bottom := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20")
+        focus_border_gui_bottom.MarginX := 0
+        focus_border_gui_bottom.MarginY := 0
+        focus_border_gui_bottom.Show("Hide")
+    }
+    if !focus_border_gui_left {
+        focus_border_gui_left := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20")
+        focus_border_gui_left.MarginX := 0
+        focus_border_gui_left.MarginY := 0
+        focus_border_gui_left.Show("Hide")
+    }
+    if !focus_border_gui_right {
+        focus_border_gui_right := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20")
+        focus_border_gui_right.MarginX := 0
+        focus_border_gui_right.MarginY := 0
+        focus_border_gui_right.Show("Hide")
+    }
+}
+
+UpdateAhkFocusBorder(visible, x, y, w, h, color_hex, thickness) {
+    global focus_border_gui_top, focus_border_gui_bottom, focus_border_gui_left, focus_border_gui_right
+    global focus_border_ahk_color
+
+    EnsureAhkFocusBorderGuis()
+
+    if !visible || w <= 0 || h <= 0 || thickness <= 0 {
+        focus_border_gui_top.Hide()
+        focus_border_gui_bottom.Hide()
+        focus_border_gui_left.Hide()
+        focus_border_gui_right.Hide()
+        return true
+    }
+
+    if (SubStr(color_hex, 1, 1) = "#")
+        color_hex := SubStr(color_hex, 2)
+    if (focus_border_ahk_color != color_hex) {
+        focus_border_gui_top.BackColor := color_hex
+        focus_border_gui_bottom.BackColor := color_hex
+        focus_border_gui_left.BackColor := color_hex
+        focus_border_gui_right.BackColor := color_hex
+        focus_border_ahk_color := color_hex
+    }
+
+    inner_h := h - (thickness * 2)
+    inner_w := w - (thickness * 2)
+    if (inner_h < 0)
+        inner_h := 0
+    if (inner_w < 0)
+        inner_w := 0
+
+    focus_border_gui_top.Show("x" x " y" y " w" w " h" thickness " NA")
+    focus_border_gui_bottom.Show("x" x " y" (y + h - thickness) " w" w " h" thickness " NA")
+    if inner_h > 0 {
+        focus_border_gui_left.Show("x" x " y" (y + thickness) " w" thickness " h" inner_h " NA")
+        focus_border_gui_right.Show("x" (x + w - thickness) " y" (y + thickness) " w" thickness " h" inner_h " NA")
+    } else {
+        focus_border_gui_left.Hide()
+        focus_border_gui_right.Hide()
+    }
+    return true
+}
+
+StopAhkFocusBorder() {
+    global focus_border_gui_top, focus_border_gui_bottom, focus_border_gui_left, focus_border_gui_right
+    if focus_border_gui_top {
+        focus_border_gui_top.Destroy()
+        focus_border_gui_top := 0
+    }
+    if focus_border_gui_bottom {
+        focus_border_gui_bottom.Destroy()
+        focus_border_gui_bottom := 0
+    }
+    if focus_border_gui_left {
+        focus_border_gui_left.Destroy()
+        focus_border_gui_left := 0
+    }
+    if focus_border_gui_right {
+        focus_border_gui_right.Destroy()
+        focus_border_gui_right := 0
+    }
 }
 
 SendCopyData(hwnd, text) {
