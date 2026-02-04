@@ -141,7 +141,7 @@ DefaultConfig() {
             "border_color", "#357EC7",
             "move_mode_color", "#2ECC71",
             "border_thickness", 4,
-            "corner_radius", 12,
+            "corner_radius", 16,
             "update_interval_ms", 20
         ),
         "helper", Map(
