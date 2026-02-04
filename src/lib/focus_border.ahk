@@ -12,17 +12,21 @@ global focus_border_enabled := focus_config["enabled"]
 global focus_border_helper_pid := 0
 global focus_border_helper_hwnd := 0
 global focus_border_helper_log_count := 0
+global focus_border_hook_system := 0
+global focus_border_hook_object := 0
+global focus_border_hook_callback := 0
 if focus_border_enabled {
     ; ------------- User Settings -------------
     border_color := ParseHexColor(focus_config["border_color"])   ; Hex color (#RRGGBB)
     move_mode_color := ParseHexColor(focus_config["move_mode_color"]) ; Hex color (#RRGGBB)
     border_thickness := Integer(focus_config["border_thickness"])      ; Border thickness in pixels
     corner_radius := Integer(focus_config["corner_radius"])        ; Corner roundness in pixels
-    update_interval := Integer(focus_config["update_interval_ms"])      ; How often (ms) to check/update active window
+    update_interval := Integer(focus_config["update_interval_ms"])      ; Debounce (ms) for focus border updates
     ; ------------- End Settings -------------
 
     StartFocusBorderHelper()
-    OnExit(StopFocusBorderHelper)
+    StartFocusBorderEventHooks(update_interval)
+    OnExit(StopFocusBorderHooksAndHelper)
 
     ; Global variables to track the last active window's position & size.
     global prev_hwnd := 0, prev_ax := 0, prev_ay := 0, prev_aw := 0, prev_ah := 0
@@ -31,8 +35,7 @@ if focus_border_enabled {
     global flash_until := 0
     global flash_color := 0xB0B0B0
 
-    ; Set up a timer to update the overlay border.
-    SetTimer(UpdateBorder, update_interval)
+    UpdateBorder()
 
     ; -------------------------------
     ; UpdateBorder: Sends focus border updates to the helper process.
@@ -121,6 +124,85 @@ StopFocusBorderHelper(*) {
     }
     focus_border_helper_pid := 0
     focus_border_helper_hwnd := 0
+}
+
+StopFocusBorderHooksAndHelper(*) {
+    StopFocusBorderEventHooks()
+    StopFocusBorderHelper()
+}
+
+StartFocusBorderEventHooks(debounce_ms := 20) {
+    global focus_border_hook_system, focus_border_hook_object, focus_border_hook_callback
+    global focus_border_debounce_ms := debounce_ms
+    if focus_border_hook_callback
+        return
+
+    focus_border_hook_callback := CallbackCreate(FocusBorderWinEventProc, "Fast", 7)
+    flags := 0x0000 | 0x0002 ; WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS
+
+    EVENT_SYSTEM_FOREGROUND := 0x0003
+    EVENT_SYSTEM_MINIMIZESTART := 0x0016
+    EVENT_SYSTEM_MINIMIZEEND := 0x0017
+    EVENT_OBJECT_SHOW := 0x8002
+    EVENT_OBJECT_HIDE := 0x8003
+    EVENT_OBJECT_LOCATIONCHANGE := 0x800B
+
+    focus_border_hook_system := DllCall(
+        "SetWinEventHook",
+        "uint", EVENT_SYSTEM_FOREGROUND,
+        "uint", EVENT_SYSTEM_MINIMIZEEND,
+        "ptr", 0,
+        "ptr", focus_border_hook_callback,
+        "uint", 0,
+        "uint", 0,
+        "uint", flags,
+        "ptr"
+    )
+
+    focus_border_hook_object := DllCall(
+        "SetWinEventHook",
+        "uint", EVENT_OBJECT_SHOW,
+        "uint", EVENT_OBJECT_LOCATIONCHANGE,
+        "ptr", 0,
+        "ptr", focus_border_hook_callback,
+        "uint", 0,
+        "uint", 0,
+        "uint", flags,
+        "ptr"
+    )
+}
+
+StopFocusBorderEventHooks() {
+    global focus_border_hook_system, focus_border_hook_object, focus_border_hook_callback
+    if focus_border_hook_system {
+        DllCall("UnhookWinEvent", "ptr", focus_border_hook_system)
+        focus_border_hook_system := 0
+    }
+    if focus_border_hook_object {
+        DllCall("UnhookWinEvent", "ptr", focus_border_hook_object)
+        focus_border_hook_object := 0
+    }
+    if focus_border_hook_callback {
+        CallbackFree(focus_border_hook_callback)
+        focus_border_hook_callback := 0
+    }
+}
+
+FocusBorderWinEventProc(h_hook, event, hwnd, id_object, id_child, event_thread, event_time) {
+    global focus_border_enabled
+    if !focus_border_enabled
+        return
+    if !hwnd
+        return
+    if (id_object != 0)
+        return
+    ScheduleFocusBorderUpdate()
+}
+
+ScheduleFocusBorderUpdate() {
+    global focus_border_debounce_ms
+    SetTimer(UpdateBorder, 0)
+    SetTimer(UpdateBorder, -focus_border_debounce_ms)
 }
 
 ResolveFocusBorderHelperPath() {
