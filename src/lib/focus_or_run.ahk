@@ -57,7 +57,7 @@ RunResolved(command, app_config := "") {
         MsgBox(
             "Failed to launch: " command "`n" err.Message "`n`n" .
             "Tip: set apps[].run to a full path or an App Paths-registered exe.",
-            "be-there",
+            "harken",
             "Iconx"
         )
     }

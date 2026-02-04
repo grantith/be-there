@@ -10,7 +10,7 @@ ShowWindowInspector() {
         return
     }
 
-    inspector_gui := Gui("+Resize", "be-there Window Inspector")
+    inspector_gui := Gui("+Resize", "harken Window Inspector")
     inspector_gui.SetFont("s10", "Segoe UI")
 
     window_list := inspector_gui.AddListView("w980 r26 Grid", ["Title", "Exe", "Class", "PID", "HWND"])

@@ -184,7 +184,7 @@ LogConfigErrors(errors, log_path, config_path := "") {
 }
 
 ShowConfigErrorsGui(details, log_path) {
-    gui := Gui("+AlwaysOnTop", "be-there Config Errors")
+    gui := Gui("+AlwaysOnTop", "harken Config Errors")
     gui.SetFont("s10", "Segoe UI")
     edit := gui.AddEdit("w760 r18 ReadOnly", details)
     open_btn := gui.AddButton("xm y+10 w120", "Open Log")
@@ -206,7 +206,7 @@ GetConfigDir() {
     user_profile := EnvGet("USERPROFILE")
     if !user_profile
         user_profile := A_ScriptDir
-    return user_profile "\.config\be-there"
+    return user_profile "\.config\harken"
 }
 
 StartConfigWatcher(path, interval_ms := 1000) {

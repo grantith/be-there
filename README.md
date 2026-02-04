@@ -1,4 +1,4 @@
-# be-there
+# Harken
 A window manager written in AutoHotkey v2.
 
 The aim is a low-friction workflow: a single super modifier, mnemonic app keys, and fast window actions. Alt+Tab and Win+Tab still work, but you will hardly use them.
@@ -70,7 +70,7 @@ Enter Command Mode with `super + ;`.
 ### Quick start
 
 - Start the program and enter command mode with `super + ;`. The binary is not currently signed and you will be warned by Windows. Clone and use `main.ahk` directly as an alternative.
-- Press `e` to open the config file. You can also find it manually in `~/.config/be-there/config.json`.
+- Press `e` to open the config file. You can also find it manually in `~/.config/Harken/config.json`.
 - After making changes to your config you can reload the config (the entire program, actually) with `r` while in command mode.
 
 ### Default Config Keys
@@ -107,7 +107,7 @@ Enter Command Mode with `super + ;`.
 - This has not been tested with multi-monitor setups or much outside of ultra-wide monitors.
 - Some apps (e.g., Discord) launch via `Update.exe` and keep versioned subfolders, which makes auto-resolution unreliable for launching or focusing more challenging.
 - For some apps that minimize or close to the system tray, it's recommended you disable that in the program. Otherwise you can try to set `apps[].run` to a stable full path (or use `run_paths`) in your config.
-- Windows with elevated permissions may ignore be-there hotkeys unless be-there is run as Administrator.
+- Windows with elevated permissions may ignore Harken hotkeys unless Harken is run as Administrator.
 
 ## Third-Party
 - JXON (AHK v2 JSON serializer) from https://github.com/TheArkive/JXON_ahk2
@@ -115,11 +115,11 @@ Enter Command Mode with `super + ;`.
 
 ## Similar tools and inspirations
 
-For this project I was primarily inspired by what I was able to accomplish with [Raycast](https://www.raycast.com/) on macOS. Between [Karabiner](https://karabiner-elements.pqrs.org/), Raycast, and [HammerSpoon](https://www.hammerspoon.org/) one could achieve all of `be-there` and more on macOS. I needed to move back to Windows for work, and I wanted a way to use the same flow on Windows that I had become accustomed to on macOS.
+For this project I was primarily inspired by what I was able to accomplish with [Raycast](https://www.raycast.com/) on macOS. Between [Karabiner](https://karabiner-elements.pqrs.org/), Raycast, and [HammerSpoon](https://www.hammerspoon.org/) one could achieve all of Harken and more on macOS. I needed to move back to windows for work, and I wanted a way to use the same flow on Windows that I had become accustomed to on macOS.
 
 Other macOS tools that I tried for more than five minutes were [AeroSpace](https://github.com/nikitabobko/AeroSpace) and [Loop](https://github.com/MrKai77/Loop).
 
-The foundation of be-there was built upon [this reddit post](https://old.reddit.com/r/AutoHotkey/comments/17qv594/window_management_tool/), shared by u/CrashKZ -- Thanks to [/u/plankoe](https://old.reddit.com/user/plankoe) for the pieces they shared, too.
+The foundation of Harken was built upon [this reddit post](https://old.reddit.com/r/AutoHotkey/comments/17qv594/window_management_tool/), shared by u/CrashKZ -- Thanks to [/u/plankoe](https://old.reddit.com/user/plankoe) for their initial contributions, too.
 
 ### [FancyZones](https://learn.microsoft.com/en-us/windows/powertoys/fancyzones)
 

@@ -16,10 +16,10 @@ set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
   ./tools/build_release.ps1
 
 @start:
-  ./be-there.ahk
+  ./harken.ahk
 
 @start_bin:
-  ./dist/be-there.exe
+  ./dist/harken.exe
 
 compress_gifs path:
   #!{{shebang}}

@@ -95,7 +95,7 @@ ShowCommandToast() {
 
 CreateCommandToastGui(model) {
     global command_toast_gui, command_toast_text, command_toast_apps_list, command_toast_actions_list, command_toast_image_list
-    command_toast_gui := Gui("+AlwaysOnTop -Caption +ToolWindow +Border", "be-there Command Overlay")
+    command_toast_gui := Gui("+AlwaysOnTop -Caption +ToolWindow +Border", "harken Command Overlay")
     command_toast_gui.MarginX := 12
     command_toast_gui.MarginY := 10
     opacity := NormalizeOverlayOpacity()
@@ -188,7 +188,7 @@ ToggleCommandHelper() {
     SaveState(AppState)
     status := command_helper_enabled ? "enabled" : "disabled"
     TrayTip("", "")
-    TrayTip("be-there", "Command overlay " status, 2)
+    TrayTip("harken", "Command overlay " status, 2)
     UpdateCommandToastVisibility()
 }
 
@@ -256,7 +256,7 @@ BuildCommandToastModel() {
     }
 
     model["mode"] := "normal"
-    model["title"] := "be-there"
+    model["title"] := "harken"
     model["apps"] := BuildAppRows()
     model["rows"] := BuildCommandToastRows(key_width)
     model["key"] := "normal|" BuildCommandToastRowsKey(model["rows"]) "|" BuildAppsKey(model["apps"])

@@ -4,7 +4,7 @@ This project ships two artifacts per release:
 
 ## 1) Source zip
 Include:
-- `be-there.ahk`
+- `harken.ahk`
 - `src/`
 - `tools/`
 - `config/config.example.json`
@@ -12,7 +12,7 @@ Include:
 
 ## 2) Compiled zip
 Include:
-- `be-there.exe`
+- `harken.exe`
 - `tools/` (optional; requires AutoHotkey for `.ahk` tools)
 - `config/config.example.json`
 - `README.md`, `LICENSE`, `LICENSES/`
@@ -28,9 +28,9 @@ Include:
 2. Create a tag: `git tag vX.Y.Z`.
 3. Push tags: `git push origin vX.Y.Z`.
 4. GitHub Actions builds and publishes release assets:
-   - `be-there-source-vX.Y.Z.zip`
-   - `be-there-vX.Y.Z-win64.zip`
-   - `be-there-vX.Y.Z.exe`
+   - `harken-source-vX.Y.Z.zip`
+   - `harken-vX.Y.Z-win64.zip`
+   - `harken-vX.Y.Z.exe`
 
 ## Release Candidates
 - Use a prerelease tag like `vX.Y.Z-rc.1`.

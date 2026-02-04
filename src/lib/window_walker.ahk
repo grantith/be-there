@@ -47,7 +47,7 @@ class WindowWalker
         if WindowWalker.gui
             return
 
-        WindowWalker.gui := Gui("+AlwaysOnTop +ToolWindow -Caption +Border", "be-there Window Selector")
+        WindowWalker.gui := Gui("+AlwaysOnTop +ToolWindow -Caption +Border", "harken Window Selector")
         WindowWalker.gui.MarginX := 12
         WindowWalker.gui.MarginY := 10
         WindowWalker.gui.SetFont("s10", "Segoe UI")

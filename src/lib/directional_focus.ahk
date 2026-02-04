@@ -209,7 +209,7 @@ UpdateDirectionalFocusDebug(mode, direction, active, candidates, stacked, select
         return
 
     if !directional_focus_debug_gui {
-        directional_focus_debug_gui := Gui("+AlwaysOnTop +ToolWindow", "be-there Directional Focus Debug")
+        directional_focus_debug_gui := Gui("+AlwaysOnTop +ToolWindow", "harken Directional Focus Debug")
         directional_focus_debug_gui.SetFont("s9", "Consolas")
         directional_focus_debug_text := directional_focus_debug_gui.AddEdit("w720 r22 ReadOnly", "")
         directional_focus_debug_gui.OnEvent("Close", (*) => directional_focus_debug_gui.Hide())

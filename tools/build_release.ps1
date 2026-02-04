@@ -68,13 +68,13 @@ $base = $base_item.FullName
 
 New-Item -ItemType Directory -Force -Path $out_path | Out-Null
 
-$exe_path = Join-Path $out_path "be-there.exe"
+$exe_path = Join-Path $out_path "harken.exe"
 if (Test-Path $exe_path) {
     Remove-Item $exe_path -Force
 }
 
 $main_args = @(
-    "/in", "$repo_root/be-there.ahk",
+    "/in", "$repo_root/harken.ahk",
     "/out", "$exe_path",
     "/base", "$base",
     "/silent", "verbose"
@@ -83,15 +83,14 @@ $main_args = @(
 
 $null = Start-Process -FilePath $compiler -ArgumentList $main_args -NoNewWindow -Wait -PassThru
 if (!(Test-Path $exe_path)) {
-    throw "Ahk2Exe did not produce be-there.exe. Check the compiler base file and try again."
+    throw "Ahk2Exe did not produce harken.exe. Check the compiler base file and try again."
 }
 Write-Host "Compiled: $exe_path"
 
-$source_zip = "$out_path/be-there-source-$version.zip"
-$compiled_zip = "$out_path/be-there-$version-win64.zip"
+$source_zip = "$out_path/harken-source-$version.zip"
 
 $source_files = @(
-    "be-there.ahk",
+    "harken.ahk",
     "src",
     "tools",
     "config/config.example.json",
@@ -104,7 +103,7 @@ $source_files = @(
 Compress-Archive -Path $source_files -DestinationPath $source_zip -Force
 
 $compiled_files = @(
-    "$out_path/be-there.exe",
+    "$out_path/harken.exe",
     "tools",
     "config/config.example.json",
     "README.md",
@@ -113,9 +112,6 @@ $compiled_files = @(
     "docs"
 )
 
-Compress-Archive -Path $compiled_files -DestinationPath $compiled_zip -Force
-
-Write-Host "Built: $compiled_zip"
 Write-Host "Built: $source_zip"
 
 $default_config = Join-Path $out_path "config.example.json"

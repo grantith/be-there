@@ -7,7 +7,7 @@ No Cursor rules found in `.cursor/rules/` or `.cursorrules`.
 No Copilot instructions found in `.github/copilot-instructions.md`.
 
 ## Quick Context
-- Entry point: `be-there.ahk`.
+- Entry point: `harken.ahk`.
 - Source modules: `src/` (hotkeys, window management, UI helpers, config loader).
 - Tools: `tools/` (build script, inspector utilities).
 - Config example: `config/config.example.json` (user config lives outside the repo).
@@ -25,7 +25,7 @@ Dev build (CI):
 - GitHub Actions runs `tools/build_release.ps1 -Version dev` on `main`/`dev` when `src/` changes.
 
 Single test / focused run:
-- No unit test runner exists. Use manual verification steps (launch `be-there.ahk`, validate
+- No unit test runner exists. Use manual verification steps (launch `harken.ahk`, validate
   hotkeys, reload flow, and Command Overlay) or run targeted helper tools in `tools/`.
 
 ## Code Style Guidelines
@@ -55,7 +55,7 @@ Single test / focused run:
 ### Imports and module structure
 - Keep modules focused by domain (hotkeys, window management, utilities).
 - Avoid circular dependencies; shared helpers should live in `src/lib/`.
-- `be-there.ahk` should remain the only top-level orchestrator.
+- `harken.ahk` should remain the only top-level orchestrator.
 
 ### Error handling
 - Use `try`/`catch` for file IO and JSON parsing; return structured errors where possible.
@@ -68,7 +68,7 @@ Single test / focused run:
 - Do not edit or delete user config without backup.
 - Validate config with schema before registering hotkeys.
 - When adding config keys, update:
-  - `DefaultConfig()` in `be-there.ahk`
+  - `DefaultConfig()` in `harken.ahk`
   - Schema in `src/lib/config_loader.ahk`
   - `config/config.example.json`
   - `README.md`
@@ -94,22 +94,22 @@ Single test / focused run:
 - Keep `README.md` and `AGENTS.md` aligned with current behavior.
 
 ## Suggested Manual Checks
-- Launch `be-there.ahk` with a clean `config.json` and verify hotkeys.
+- Launch `harken.ahk` with a clean `config.json` and verify hotkeys.
 - Validate reload flow (normal hotkey and command mode).
 - Confirm Command Overlay and helper tools still open and update.
-- If touching config schema, ensure errors log correctly in `~/.config/be-there/config.errors.log`.
+- If touching config schema, ensure errors log correctly in `~/.config/harken/config.errors.log`.
 
 ## Paths and Layout Notes
-- Main script: `be-there.ahk`.
+- Main script: `harken.ahk`.
 - Config loader: `src/lib/config_loader.ahk` (schema + validation).
 - JSON parsing: `src/lib/JXON.ahk`.
 - Window manager: `src/lib/window_manager.ahk`.
 - Hotkeys: `src/hotkeys/*.ahk`.
 
 ## Build Artifacts
-- `dist/be-there.exe`
-- `dist/be-there-source-<version>.zip`
-- `dist/be-there-<version>-win64.zip`
+- `dist/harken.exe`
+- `dist/harken-source-<version>.zip`
+- `dist/harken-<version>-win64.zip`
 
 ## When In Doubt
 - Keep behavior consistent with existing hotkeys and overlays.

@@ -2,3 +2,4 @@ PLAN.md
 config/config.json
 dist/
 ahk/
+*_PLAN.md
