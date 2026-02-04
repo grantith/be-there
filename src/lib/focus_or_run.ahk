@@ -36,17 +36,47 @@ FocusOrRun(winTitle, exePath, hotkey_id, app_config := "", *) {
     if target_hwnd {
         if (current_hwnd = target_hwnd) {
             if last_window.Has(hotkey_id) && WinExist("ahk_id " last_window[hotkey_id]) {
-                WinActivate "ahk_id " last_window[hotkey_id]
+                ActivateAppWindow(last_window[hotkey_id])
             }
             return
         }
         if current_hwnd && (current_hwnd != target_hwnd) {
             last_window[hotkey_id] := current_hwnd
         }
-        WinActivate "ahk_id " target_hwnd
+        ActivateAppWindow(target_hwnd)
     } else {
         RunResolved(exePath, app_config)
     }
+}
+
+ActivateAppWindow(hwnd) {
+    if !hwnd
+        return
+
+    fore_hwnd := DllCall("GetForegroundWindow", "ptr")
+    current_thread := DllCall("GetCurrentThreadId", "uint")
+    pid_fore := 0
+    pid_target := 0
+    fore_thread := fore_hwnd ? DllCall("GetWindowThreadProcessId", "ptr", fore_hwnd, "uint*", &pid_fore, "uint") : 0
+    target_thread := DllCall("GetWindowThreadProcessId", "ptr", hwnd, "uint*", &pid_target, "uint")
+
+    if pid_target
+        DllCall("AllowSetForegroundWindow", "uint", pid_target)
+
+    if fore_thread
+        DllCall("AttachThreadInput", "uint", current_thread, "uint", fore_thread, "int", True)
+    if target_thread
+        DllCall("AttachThreadInput", "uint", current_thread, "uint", target_thread, "int", True)
+
+    WinRestore "ahk_id " hwnd
+    DllCall("SetForegroundWindow", "ptr", hwnd)
+    DllCall("BringWindowToTop", "ptr", hwnd)
+    DllCall("SetFocus", "ptr", hwnd)
+
+    if target_thread
+        DllCall("AttachThreadInput", "uint", current_thread, "uint", target_thread, "int", False)
+    if fore_thread
+        DllCall("AttachThreadInput", "uint", current_thread, "uint", fore_thread, "int", False)
 }
 
 RunResolved(command, app_config := "") {
