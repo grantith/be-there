@@ -64,7 +64,12 @@ class Window
         Hotkey('*' window_nav_modifier ' up', ObjBindMethod(Gui_Guides, 'Destroy_Guis'))
     }
 
-    static SetMoveMode(state) => Window.move_mode := state
+    static SetMoveMode(state) {
+        Window.move_mode := state
+        global focus_border_enabled
+        if focus_border_enabled
+            ScheduleFocusBorderUpdate()
+    }
     static IsMoveMode(*) => Window.move_mode
 
 

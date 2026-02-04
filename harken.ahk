@@ -234,6 +234,9 @@ CheckConfigWatcher(path) {
 ActivateReloadMode(timeout_ms := 1500) {
     global reload_mode_active := true
     global reload_mode_activated_at := A_TickCount
+    global focus_border_enabled
+    if focus_border_enabled
+        ScheduleFocusBorderUpdate()
     SetTimer(ClearReloadMode, 0)
     SetTimer(ClearReloadMode, -timeout_ms)
     UpdateCommandToastVisibility()
@@ -241,6 +244,9 @@ ActivateReloadMode(timeout_ms := 1500) {
 
 ClearReloadMode(*) {
     global reload_mode_active := false
+    global focus_border_enabled
+    if focus_border_enabled
+        ScheduleFocusBorderUpdate()
     UpdateCommandToastVisibility()
 }
 
