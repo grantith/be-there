@@ -21,6 +21,10 @@ set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 @start_bin:
   ./dist/harken.exe
 
+@build_rs:
+  cd ./tools/focus_border_helper
+  cargo build --release
+
 compress_gifs path:
   #!{{shebang}}
   Get-ChildItem {{path}} -Filter *.gif | ForEach-Object {

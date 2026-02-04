@@ -9,6 +9,9 @@ global Config
 
 focus_config := Config["focus_border"]
 global focus_border_enabled := focus_config["enabled"]
+global focus_border_helper_pid := 0
+global focus_border_helper_hwnd := 0
+global focus_border_helper_log_count := 0
 if focus_border_enabled {
     ; ------------- User Settings -------------
     border_color := ParseHexColor(focus_config["border_color"])   ; Hex color (#RRGGBB)
@@ -18,20 +21,13 @@ if focus_border_enabled {
     update_interval := Integer(focus_config["update_interval_ms"])      ; How often (ms) to check/update active window
     ; ------------- End Settings -------------
 
-    ; --- Create one overlay GUI that will be re-shaped to form a hollow border ---
-    overlay := Gui("+AlwaysOnTop +ToolWindow -Caption +E0x20", "ActiveWindowBorder")
-    ; Set the background color of the overlay (it will only be visible in its "region")
-    ; Convert the numeric color (0xRRGGBB) to a 6-digit hex string (without "0x")
-    bg_color := Format("{:06X}", border_color & 0xFFFFFF)
-    overlay.BackColor := bg_color
-    overlay.Show("NoActivate")
-    h_overlay := overlay.Hwnd
-    ; Add layered style so that SetWindowRgn is applied smoothly.
-    WinSetExStyle("+0x80000", "ahk_id " h_overlay)
+    StartFocusBorderHelper()
+    OnExit(StopFocusBorderHelper)
 
     ; Global variables to track the last active window's position & size.
     global prev_hwnd := 0, prev_ax := 0, prev_ay := 0, prev_aw := 0, prev_ah := 0
-    global current_color := border_color
+    global prev_color := border_color
+    global prev_visible := false
     global flash_until := 0
     global flash_color := 0xB0B0B0
 
@@ -39,31 +35,29 @@ if focus_border_enabled {
     SetTimer(UpdateBorder, update_interval)
 
     ; -------------------------------
-    ; UpdateBorder: Positions/resizes and re-shapes the overlay border
+    ; UpdateBorder: Sends focus border updates to the helper process.
     ; -------------------------------
     UpdateBorder(*) {
-        global overlay, h_overlay
-        global border_thickness, corner_radius, border_color, move_mode_color, current_color
+        global border_thickness, corner_radius, border_color, move_mode_color
         global prev_hwnd, prev_ax, prev_ay, prev_aw, prev_ah
+        global prev_color, prev_visible
+        global flash_until, flash_color
 
-        ; Get the currently active window.
         active_hwnd := DllCall("GetForegroundWindow", "ptr")
-        ; (Ignore the overlay itself if it somehow becomes active)
-        if (active_hwnd = h_overlay) {
-            active_hwnd := 0
-        }
-        ; If no active window found or it's gone, hide the overlay.
         if (!active_hwnd || !WinExist("ahk_id " active_hwnd)) {
-            overlay.Hide()
+            if prev_visible
+                SendFocusBorderUpdate(false, 0, 0, 0, 0, "#000000", border_thickness, corner_radius)
+            prev_visible := false
             return
         }
         style := WinGetStyle("ahk_id " active_hwnd)
         if (style & 0x20000000) {  ; WS_MINIMIZE flag
-            overlay.Hide()
+            if prev_visible
+                SendFocusBorderUpdate(false, 0, 0, 0, 0, "#000000", border_thickness, corner_radius)
+            prev_visible := false
             return
         }
 
-        ; --- Get the window's true bounds using DWM (works better for Windows 11) ---
         rect := Buffer(16, 0)
         if (DllCall("dwmapi\DwmGetWindowAttribute", "ptr", active_hwnd, "uint", 9, "ptr", rect, "uint", 16) = 0) {
             ax := NumGet(rect, 0, "int")
@@ -73,7 +67,6 @@ if focus_border_enabled {
             aw := right - ax
             ah := bottom - ay
         } else {
-            ; Fallback in case DWM fails.
             WinGetPos(&ax, &ay, &aw, &ah, "ahk_id " active_hwnd)
         }
 
@@ -83,58 +76,138 @@ if focus_border_enabled {
             desired_color := 0xFFD400
         else
             desired_color := Window.IsMoveMode() ? move_mode_color : border_color
-        if (desired_color != current_color) {
-            overlay.BackColor := Format("{:06X}", desired_color & 0xFFFFFF)
-            current_color := desired_color
-        }
 
-        ; Only update if something changed.
-        if (active_hwnd = prev_hwnd && ax = prev_ax && ay = prev_ay && aw = prev_aw && ah = prev_ah) {
+        if (active_hwnd = prev_hwnd && ax = prev_ax && ay = prev_ay && aw = prev_aw && ah = prev_ah && desired_color = prev_color && prev_visible) {
             return
         }
-        prev_hwnd := active_hwnd, prev_ax := ax, prev_ay := ay, prev_aw := aw, prev_ah := ah
 
-        ; Calculate overlay position and size.
-        ; The overlay is expanded by border_thickness on all sides so that its inner edge aligns
-        ; exactly with the active window's border.
-        ox := ax - border_thickness
-        oy := ay - border_thickness
-        ow := aw + (2 * border_thickness)
-        oh := ah + (2 * border_thickness)
-
-        ; (Re)position the overlay window.
-        overlay.Show("x" ox " y" oy " w" ow " h" oh " NoActivate")
-
-        ; ----- Build a hollow (donut-shaped) region with rounded corners -----
-        ; Outer region: a rounded rectangle covering the full overlay.
-        h_rgn_outer := DllCall("CreateRoundRectRgn", "int", 0, "int", 0, "int", ow, "int", oh, "int", corner_radius * 2, "int", corner_radius * 2, "ptr")
-        ; Inner region: same shape, inset by border_thickness.
-        inner_corner := (corner_radius > border_thickness) ? (corner_radius - border_thickness) : 0
-        h_rgn_inner := DllCall("CreateRoundRectRgn", "int", border_thickness, "int", border_thickness, "int", ow - border_thickness, "int", oh - border_thickness, "int", inner_corner * 2, "int", inner_corner * 2, "ptr")
-        ; Create a region for the border by subtracting the inner region from the outer.
-        ; First, create an empty region.
-        h_rgn_border := DllCall("CreateRectRgn", "int", 0, "int", 0, "int", 0, "int", 0, "ptr")
-        ; RGN_DIFF = 4: h_rgn_border = h_rgn_outer - h_rgn_inner.
-        DllCall("CombineRgn", "ptr", h_rgn_border, "ptr", h_rgn_outer, "ptr", h_rgn_inner, "int", 4)
-        ; Apply the computed region to the overlay window.
-        ; (After calling SetWindowRgn, the system owns h_rgn_border, so DO NOT free it.)
-        DllCall("SetWindowRgn", "ptr", h_overlay, "ptr", h_rgn_border, "int", True)
-        ; Clean up the temporary region handles.
-        DllCall("DeleteObject", "ptr", h_rgn_outer)
-        DllCall("DeleteObject", "ptr", h_rgn_inner)
+        color_hex := "#" Format("{:06X}", desired_color & 0xFFFFFF)
+        if SendFocusBorderUpdate(true, ax, ay, aw, ah, color_hex, border_thickness, corner_radius) {
+            prev_hwnd := active_hwnd, prev_ax := ax, prev_ay := ay, prev_aw := aw, prev_ah := ah
+            prev_color := desired_color
+            prev_visible := true
+        } else {
+            prev_visible := false
+        }
     }
 }
 
 FlashFocusBorder(color := 0xB0B0B0, duration_ms := 130) {
-    global focus_border_enabled, flash_until, flash_color, overlay, current_color
+    global focus_border_enabled, flash_until, flash_color
     if !focus_border_enabled
         return
     flash_color := color
     flash_until := A_TickCount + duration_ms
-    if overlay {
-        overlay.BackColor := Format("{:06X}", flash_color & 0xFFFFFF)
-        current_color := flash_color
+    global prev_color
+    prev_color := -1
+}
+
+StartFocusBorderHelper() {
+    global focus_border_helper_pid, focus_border_helper_hwnd, focus_border_helper_path
+    if focus_border_helper_pid
+        return
+    helper_path := ResolveFocusBorderHelperPath()
+    if !helper_path
+        return
+    focus_border_helper_path := helper_path
+    Run('"' helper_path '"', "", "Hide", &focus_border_helper_pid)
+    focus_border_helper_hwnd := WaitForFocusBorderHelperWindow()
+}
+
+StopFocusBorderHelper(*) {
+    global focus_border_helper_pid, focus_border_helper_hwnd
+    if focus_border_helper_pid {
+        try ProcessClose(focus_border_helper_pid)
     }
+    focus_border_helper_pid := 0
+    focus_border_helper_hwnd := 0
+}
+
+ResolveFocusBorderHelperPath() {
+    helper_name := "harken_focus_border_helper.exe"
+    candidate_paths := [
+        A_ScriptDir "\\" helper_name,
+        A_ScriptDir "\\tools\\focus_border_helper\\target\\release\\" helper_name,
+        A_ScriptDir "\\tools\\focus_border_helper\\target\\debug\\" helper_name
+    ]
+    for _, path in candidate_paths {
+        if FileExist(path)
+            return path
+    }
+    return ""
+}
+
+WaitForFocusBorderHelperWindow(timeout_ms := 1500) {
+    start_time := A_TickCount
+    while (A_TickCount - start_time) < timeout_ms {
+        hwnd := FindFocusBorderHelperWindow()
+        if hwnd
+            return hwnd
+        Sleep(50)
+    }
+    return 0
+}
+
+FindFocusBorderHelperWindow() {
+    return DllCall("FindWindow", "str", "HarkenFocusBorderHelper", "ptr", 0, "ptr")
+}
+
+EnsureFocusBorderHelperWindow() {
+    global focus_border_helper_hwnd, focus_border_helper_pid
+    if focus_border_helper_hwnd && DllCall("IsWindow", "ptr", focus_border_helper_hwnd)
+        return focus_border_helper_hwnd
+    focus_border_helper_hwnd := FindFocusBorderHelperWindow()
+    if !focus_border_helper_hwnd {
+        focus_border_helper_pid := 0
+        StartFocusBorderHelper()
+    }
+    return focus_border_helper_hwnd
+}
+
+SendFocusBorderUpdate(visible, x, y, w, h, color_hex, thickness, radius) {
+    hwnd := EnsureFocusBorderHelperWindow()
+    if !hwnd
+        return false
+
+    payload := Map(
+        "visible", visible,
+        "x", x,
+        "y", y,
+        "w", w,
+        "h", h,
+        "color", color_hex,
+        "thickness", thickness,
+        "radius", radius
+    )
+    json := Jxon_Dump(payload, 0)
+    return SendCopyData(hwnd, json)
+}
+
+SendCopyData(hwnd, text) {
+    data_size := StrPut(text, "UTF-8")
+    data := Buffer(data_size, 0)
+    StrPut(text, data, "UTF-8")
+
+    LogFocusBorderHelper(text)
+
+    cds := Buffer(A_PtrSize * 3, 0)
+    NumPut("UPtr", 1, cds, 0)
+    NumPut("UInt", data_size, cds, A_PtrSize)
+    NumPut("UPtr", data.Ptr, cds, A_PtrSize * 2)
+
+    result := DllCall("SendMessage", "ptr", hwnd, "uint", 0x4A, "ptr", 0, "ptr", cds)
+    if !result
+        LogFocusBorderHelper("send_failed")
+    return result
+}
+
+LogFocusBorderHelper(message) {
+    global focus_border_helper_log_count
+    if focus_border_helper_log_count >= 20
+        return
+    focus_border_helper_log_count += 1
+    log_path := A_Temp "\\harken_focus_border_ahk.log"
+    FileAppend(message "`n", log_path)
 }
 
 ParseHexColor(value) {

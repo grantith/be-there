@@ -25,6 +25,10 @@ jobs:
           $hasChanges = $changed.Count -gt 0
           "has_src_changes=$hasChanges" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
+      - name: Setup Rust
+        if: steps.src_changes.outputs.has_src_changes == 'true'
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Build dev artifacts
         if: steps.src_changes.outputs.has_src_changes == 'true'
         shell: pwsh
@@ -39,3 +43,4 @@ jobs:
           path: |
             dist\harken-source-dev.zip
             dist\harken.exe
+            dist\harken_focus_border_helper.exe

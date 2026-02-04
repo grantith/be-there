@@ -70,6 +70,7 @@ Enter Command Mode with `super + ;`.
 ### Quick start
 
 - Start the program and enter command mode with `super + ;`. The binary is not currently signed and you will be warned by Windows. Clone and use `main.ahk` directly as an alternative.
+- The focus border uses `harken_focus_border_helper.exe` for smoother rendering; keep it next to `harken.exe` when using the compiled binary.
 - Press `e` to open the config file. You can also find it manually in `~/.config/Harken/config.json`.
 - After making changes to your config you can reload the config (the entire program, actually) with `r` while in command mode.
 
@@ -112,6 +113,9 @@ Enter Command Mode with `super + ;`.
 ## Third-Party
 - JXON (AHK v2 JSON serializer) from https://github.com/TheArkive/JXON_ahk2
   - License: `LICENSES/JXON_ahk2-LICENSE.md`
+- Focus border helper (Rust): iced (custom-winri branch) from https://github.com/sub07/iced
+- Focus border helper (Rust): serde/serde_json from https://github.com/serde-rs/serde
+- Focus border helper (Rust): windows from https://github.com/microsoft/windows-rs
 
 ## Similar tools and inspirations
 

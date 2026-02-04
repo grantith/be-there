@@ -68,6 +68,25 @@ $base = $base_item.FullName
 
 New-Item -ItemType Directory -Force -Path $out_path | Out-Null
 
+$helper_dir = Join-Path $repo_root "tools/focus_border_helper"
+$helper_exe = Join-Path $helper_dir "target/release/harken_focus_border_helper.exe"
+if (!(Test-Path $helper_dir)) {
+    throw "Focus border helper directory not found at $helper_dir"
+}
+if (!(Get-Command cargo -ErrorAction SilentlyContinue)) {
+    throw "Cargo not found. Install Rust to build the focus border helper."
+}
+Push-Location $helper_dir
+try {
+    cargo build --release
+} finally {
+    Pop-Location
+}
+if (!(Test-Path $helper_exe)) {
+    throw "Helper build did not produce $helper_exe"
+}
+Copy-Item -Path $helper_exe -Destination (Join-Path $out_path "harken_focus_border_helper.exe") -Force
+
 $exe_path = Join-Path $out_path "harken.exe"
 if (Test-Path $exe_path) {
     Remove-Item $exe_path -Force
