@@ -14,13 +14,15 @@ global focus_border_helper_hwnd := 0
 global focus_border_hook_system := 0
 global focus_border_hook_object := 0
 global focus_border_hook_callback := 0
+global focus_border_last_update := 0
+global focus_border_update_pending := false
 if focus_border_enabled {
     ; ------------- User Settings -------------
     border_color := ParseHexColor(focus_config["border_color"])   ; Hex color (#RRGGBB)
     move_mode_color := ParseHexColor(focus_config["move_mode_color"]) ; Hex color (#RRGGBB)
     border_thickness := Integer(focus_config["border_thickness"])      ; Border thickness in pixels
     corner_radius := Integer(focus_config["corner_radius"])        ; Corner roundness in pixels
-    update_interval := Integer(focus_config["update_interval_ms"])      ; Debounce (ms) for focus border updates
+    update_interval := Integer(focus_config["update_interval_ms"])      ; Throttle (ms) for focus border updates
     ; ------------- End Settings -------------
 
     StartFocusBorderHelper()
@@ -44,9 +46,18 @@ if focus_border_enabled {
         global prev_hwnd, prev_ax, prev_ay, prev_aw, prev_ah
         global prev_color, prev_visible
         global flash_until, flash_color
+        global focus_border_last_update
+        focus_border_last_update := A_TickCount
 
         active_hwnd := DllCall("GetForegroundWindow", "ptr")
         if (!active_hwnd || !WinExist("ahk_id " active_hwnd)) {
+            if prev_visible
+                SendFocusBorderUpdate(false, 0, 0, 0, 0, "#000000", border_thickness, corner_radius)
+            prev_visible := false
+            return
+        }
+        class_name := WinGetClass("ahk_id " active_hwnd)
+        if (class_name = "Progman" || class_name = "WorkerW" || class_name = "Shell_TrayWnd" || class_name = "Shell_SecondaryTrayWnd") {
             if prev_visible
                 SendFocusBorderUpdate(false, 0, 0, 0, 0, "#000000", border_thickness, corner_radius)
             prev_visible := false
@@ -199,9 +210,29 @@ FocusBorderWinEventProc(h_hook, event, hwnd, id_object, id_child, event_thread, 
 }
 
 ScheduleFocusBorderUpdate() {
-    global focus_border_debounce_ms
-    SetTimer(UpdateBorder, 0)
-    SetTimer(UpdateBorder, -focus_border_debounce_ms)
+    global focus_border_debounce_ms, focus_border_last_update, focus_border_update_pending
+    interval := focus_border_debounce_ms
+    if (interval <= 0) {
+        UpdateBorder()
+        return
+    }
+    now := A_TickCount
+    elapsed := now - focus_border_last_update
+    if (elapsed >= interval) {
+        UpdateBorder()
+        return
+    }
+    if focus_border_update_pending
+        return
+    focus_border_update_pending := true
+    delay := interval - elapsed
+    SetTimer(DoFocusBorderUpdate, -delay)
+}
+
+DoFocusBorderUpdate(*) {
+    global focus_border_update_pending
+    focus_border_update_pending := false
+    UpdateBorder()
 }
 
 ResolveFocusBorderHelperPath() {
