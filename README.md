@@ -113,6 +113,8 @@ Enter Command Mode with `super + ;`.
 ## Third-Party
 - JXON (AHK v2 JSON serializer) from https://github.com/TheArkive/JXON_ahk2
   - License: `LICENSES/JXON_ahk2-LICENSE.md`
+- winri (border rendering reference) from https://github.com/sub07/winri
+  - License: `LICENSES/winri-MIT.txt`
 - Focus border helper (Rust): iced (custom-winri branch) from https://github.com/sub07/iced
 - Focus border helper (Rust): serde/serde_json from https://github.com/serde-rs/serde
 - Focus border helper (Rust): windows from https://github.com/microsoft/windows-rs
@@ -122,8 +124,6 @@ Enter Command Mode with `super + ;`.
 For this project I was primarily inspired by what I was able to accomplish with [Raycast](https://www.raycast.com/) on macOS. Between [Karabiner](https://karabiner-elements.pqrs.org/), Raycast, and [HammerSpoon](https://www.hammerspoon.org/) one could achieve all of Harken and more on macOS. I needed to move back to windows for work, and I wanted a way to use the same flow on Windows that I had become accustomed to on macOS.
 
 Other macOS tools that I tried for more than five minutes were [AeroSpace](https://github.com/nikitabobko/AeroSpace) and [Loop](https://github.com/MrKai77/Loop).
-
-The foundation of Harken was built upon [this reddit post](https://old.reddit.com/r/AutoHotkey/comments/17qv594/window_management_tool/), shared by u/CrashKZ -- Thanks to [/u/plankoe](https://old.reddit.com/user/plankoe) for their initial contributions, too.
 
 ### [FancyZones](https://learn.microsoft.com/en-us/windows/powertoys/fancyzones)
 
@@ -136,3 +136,8 @@ I really like komorebi--though I didn't use it for long and I have never been ab
 ### [GlazeWM](https://github.com/glzr-io/glazewm)
 
 GlazeWM is another popular tiling window manager for Windows operating systems.
+
+## Credits
+
+The foundation of Harken was built upon [this reddit post](https://old.reddit.com/r/AutoHotkey/comments/17qv594/window_management_tool/), shared by u/CrashKZ -- Thanks to [/u/plankoe](https://old.reddit.com/user/plankoe) for their initial contributions, too.
+
