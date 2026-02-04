@@ -10,13 +10,7 @@ use iced::{
     theme::Palette,
 };
 use serde::Deserialize;
-use std::{
-    fs::OpenOptions,
-    io::Write,
-    path::PathBuf,
-    sync::{OnceLock, atomic::{AtomicUsize, Ordering}},
-    thread,
-};
+use std::{sync::OnceLock, thread};
 use windows::Win32::{
     Foundation::{HWND, LPARAM, LRESULT, WPARAM},
     System::{
@@ -36,8 +30,6 @@ const IPC_WINDOW_TITLE: &str = "Harken Focus Border Helper IPC";
 const STREAM_CHANNEL_BUFFER_SIZE: usize = 32;
 
 static IPC_SENDER: OnceLock<iced::futures::channel::mpsc::Sender<BorderUpdate>> = OnceLock::new();
-static LOG_PATH: OnceLock<PathBuf> = OnceLock::new();
-static LOG_COUNT: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug, Clone, Deserialize)]
 struct BorderUpdate {
@@ -84,15 +76,13 @@ struct State {
 }
 
 fn main() {
-    init_log_path();
-    log_event("helper_start");
     if let Err(error) = iced::daemon(State::new, State::update, State::view)
         .subscription(State::subscription)
         .title(State::title)
         .theme(State::theme)
         .run()
     {
-        log_event(&format!("helper_error={error}"));
+        eprintln!("Helper exited: {error}");
     }
 }
 
@@ -272,7 +262,6 @@ fn launch_ipc_listener(tx: iced::futures::channel::mpsc::Sender<BorderUpdate>) {
                 Some(h_instance.into()),
                 None,
             );
-            log_event("ipc_window_created");
 
             let mut message = MSG::default();
             while GetMessageW(&mut message, None, 0, 0).into() {
@@ -300,27 +289,20 @@ unsafe extern "system" fn ipc_wnd_proc(
                     (*copy_data).cbData as usize,
                 )
             };
-            log_event("ipc_copydata_received");
             match std::str::from_utf8(data) {
                 Ok(text) => {
                     let trimmed = text.trim_end_matches('\0');
                     match serde_json::from_str::<BorderUpdate>(trimmed) {
                         Ok(update) => {
-                            log_event("ipc_update_ok");
                             if let Some(sender) = IPC_SENDER.get() {
                                 let mut sender = sender.clone();
                                 let _ = sender.try_send(update);
                             }
                         }
-                        Err(_) => {
-                            log_event("ipc_json_fail");
-                            let snippet = trimmed.replace('\n', " ").replace('\r', " ");
-                            let clipped = if snippet.len() > 200 { &snippet[..200] } else { &snippet };
-                            log_event(&format!("ipc_json={clipped}"));
-                        }
+                        Err(_) => {}
                     }
                 }
-                Err(_) => log_event("ipc_utf8_fail"),
+                Err(_) => {}
             }
             LRESULT(1)
         }
@@ -351,27 +333,4 @@ fn parse_hex_color(value: &str) -> Option<Color> {
     let g = u8::from_str_radix(&trimmed[2..4], 16).ok()?;
     let b = u8::from_str_radix(&trimmed[4..6], 16).ok()?;
     Some(Color::from_rgb(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0))
-}
-
-fn init_log_path() {
-    if LOG_PATH.get().is_some() {
-        return;
-    }
-    let mut path = std::env::temp_dir();
-    path.push("harken_focus_border_helper.log");
-    let _ = LOG_PATH.set(path);
-}
-
-fn log_event(message: &str) {
-    let count = LOG_COUNT.fetch_add(1, Ordering::Relaxed);
-    if count >= 20 {
-        return;
-    }
-    let path = match LOG_PATH.get() {
-        Some(path) => path,
-        None => return,
-    };
-    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(path) {
-        let _ = writeln!(file, "{}", message);
-    }
 }

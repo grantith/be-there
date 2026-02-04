@@ -11,7 +11,6 @@ focus_config := Config["focus_border"]
 global focus_border_enabled := focus_config["enabled"]
 global focus_border_helper_pid := 0
 global focus_border_helper_hwnd := 0
-global focus_border_helper_log_count := 0
 global focus_border_hook_system := 0
 global focus_border_hook_object := 0
 global focus_border_hook_callback := 0
@@ -270,26 +269,13 @@ SendCopyData(hwnd, text) {
     data := Buffer(data_size, 0)
     StrPut(text, data, "UTF-8")
 
-    LogFocusBorderHelper(text)
 
     cds := Buffer(A_PtrSize * 3, 0)
     NumPut("UPtr", 1, cds, 0)
     NumPut("UInt", data_size, cds, A_PtrSize)
     NumPut("UPtr", data.Ptr, cds, A_PtrSize * 2)
 
-    result := DllCall("SendMessage", "ptr", hwnd, "uint", 0x4A, "ptr", 0, "ptr", cds)
-    if !result
-        LogFocusBorderHelper("send_failed")
-    return result
-}
-
-LogFocusBorderHelper(message) {
-    global focus_border_helper_log_count
-    if focus_border_helper_log_count >= 20
-        return
-    focus_border_helper_log_count += 1
-    log_path := A_Temp "\\harken_focus_border_ahk.log"
-    FileAppend(message "`n", log_path)
+    return DllCall("SendMessage", "ptr", hwnd, "uint", 0x4A, "ptr", 0, "ptr", cds)
 }
 
 ParseHexColor(value) {
