@@ -120,12 +120,21 @@ layout_mode = "four_slots"
 full_side = "left"
 
 [modes.scrolling]
-wrap_enabled = true
+wrap_enabled = false
 center_width_ratio = 0.5
 side_width_ratio = 0.25
 gap_px = 0
-workspace_count = 1
+workspace_count = 0
 seed_with_open_windows = true
+
+[modes.scrolling.overview]
+enabled = true
+hotkey = "o"
+visible_count = 5
+center_scale = 0.9
+side_scale = 0.6
+spacing_px = 40
+use_live_thumbnails = true
 
 [helper]
 enabled = true

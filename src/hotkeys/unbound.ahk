@@ -19,6 +19,16 @@ RegisterUnboundHotkeys() {
     if reload_config["enabled"] && reload_config["super_key_required"]
         AddUsedKey(used_keys, reload_config["hotkey"])
 
+    if Config.Has("modes") && Config["modes"]["active"] = "scrolling" {
+        workspace_count := Integer(Config["modes"]["scrolling"]["workspace_count"])
+        max_index := (workspace_count <= 0) ? 9 : Min(9, workspace_count)
+        loop max_index
+            AddUsedKey(used_keys, A_Index)
+        overview_config := Config["modes"]["scrolling"]["overview"]
+        if overview_config["enabled"]
+            AddUsedKey(used_keys, overview_config["hotkey"])
+    }
+
     for _, app in Config["apps"] {
         AddUsedKey(used_keys, app["hotkey"])
     }

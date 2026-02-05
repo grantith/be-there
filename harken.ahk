@@ -70,6 +70,7 @@ window_nav_modifier := super_key
 #Include src/lib/directional_focus.ahk
 #Include src/lib/carousel.ahk
 #Include src/lib/scrolling_mode.ahk
+#Include src/lib/scrolling_overview.ahk
 #Include src/lib/focus_border.ahk
 #Include src/lib/window_walker.ahk
 #Include src/hotkeys/global_hotkey.ahk
@@ -77,6 +78,7 @@ window_nav_modifier := super_key
 #Include src/hotkeys/window.ahk
 #Include src/hotkeys/directional_focus.ahk
 #Include src/hotkeys/window_walker.ahk
+#Include src/hotkeys/scrolling.ahk
 #Include src/hotkeys/unbound.ahk
 
 InitCarousel()
@@ -163,12 +165,21 @@ DefaultConfig() {
                 "full_side", "left"
             ),
             "scrolling", Map(
-                "wrap_enabled", true,
+                "wrap_enabled", false,
                 "center_width_ratio", 0.5,
                 "side_width_ratio", 0.25,
                 "gap_px", 0,
                 "workspace_count", 1,
-                "seed_with_open_windows", true
+                "seed_with_open_windows", true,
+                "overview", Map(
+                    "enabled", true,
+                    "hotkey", "o",
+                    "visible_count", 5,
+                    "center_scale", 0.9,
+                    "side_scale", 0.6,
+                    "spacing_px", 40,
+                    "use_live_thumbnails", true
+                )
             )
         ),
         "helper", Map(

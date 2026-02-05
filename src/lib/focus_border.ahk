@@ -33,6 +33,7 @@ global prev_ay := 0
 global prev_aw := 0
 global prev_ah := 0
 global last_real_active_hwnd := 0
+global focus_border_paused := false
 global focus_border_watchdog_active := false
 if focus_border_enabled {
     ; ------------- User Settings -------------
@@ -186,6 +187,9 @@ StartFocusBorderHelper() {
     global focus_border_helper_pid, focus_border_helper_hwnd, focus_border_helper_path
     global focus_border_use_ahk, focus_border_fallback_toast_shown
     StopFocusBorderHelper()
+    while pid := ProcessExist("harken_focus_border_helper.exe") {
+        try ProcessClose(pid)
+    }
     helper_path := ResolveFocusBorderHelperPath()
     if !helper_path {
         EnableAhkFocusBorder("helper missing")
@@ -292,6 +296,9 @@ FocusBorderWinEventProc(h_hook, event, hwnd, id_object, id_child, event_thread, 
 }
 
 ScheduleFocusBorderUpdate() {
+    global focus_border_paused
+    if focus_border_paused
+        return
     global focus_border_debounce_ms, focus_border_last_update, focus_border_update_pending
     interval := focus_border_debounce_ms
     if (interval <= 0) {
@@ -312,9 +319,19 @@ ScheduleFocusBorderUpdate() {
 }
 
 DoFocusBorderUpdate(*) {
+    global focus_border_paused
+    if focus_border_paused
+        return
     global focus_border_update_pending
     focus_border_update_pending := false
     UpdateBorder()
+}
+
+PauseFocusBorderUpdates(paused) {
+    global focus_border_paused
+    focus_border_paused := paused
+    if !paused
+        ScheduleFocusBorderUpdate()
 }
 
 ResolveFocusBorderHelperPath() {

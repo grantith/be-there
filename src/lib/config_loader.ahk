@@ -112,7 +112,16 @@ ConfigSchema() {
                 "side_width_ratio", "number",
                 "gap_px", "number",
                 "workspace_count", "number",
-                "seed_with_open_windows", "bool"
+                "seed_with_open_windows", "bool",
+                "overview", Map(
+                    "enabled", "bool",
+                    "hotkey", "string",
+                    "visible_count", "number",
+                    "center_scale", "number",
+                    "side_scale", "number",
+                    "spacing_px", "number",
+                    "use_live_thumbnails", "bool"
+                )
             )
         ),
         "helper", Map(
@@ -153,6 +162,7 @@ NormalizeModesConfig(config) {
         modes["scrolling"] := DeepMergeMaps(modes["scrolling"], config["scrolling"])
         config.Delete("scrolling")
     }
+
 
     if modes.Has("carousel") && modes["carousel"].Has("enabled")
         modes["carousel"].Delete("enabled")

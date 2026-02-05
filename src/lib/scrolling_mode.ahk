@@ -6,6 +6,7 @@ global scrolling_workspace_count := 1
 global scrolling_active_workspace := 1
 global scrolling_workspaces := Map()
 global scrolling_center_index := Map()
+global scrolling_dynamic_workspaces := false
 global scrolling_wrap_enabled := true
 global scrolling_center_width_ratio := 0.5
 global scrolling_side_width_ratio := 0.25
@@ -17,6 +18,7 @@ InitScrolling() {
     global scrolling_enabled, scrolling_workspace_count, scrolling_workspaces, scrolling_center_index
     global scrolling_wrap_enabled, scrolling_center_width_ratio, scrolling_side_width_ratio, scrolling_gap_px
     global scrolling_seed_with_open_windows
+    global scrolling_dynamic_workspaces
 
     if !Config.Has("modes")
         return
@@ -29,7 +31,9 @@ InitScrolling() {
     scrolling_center_width_ratio := scrolling_config["center_width_ratio"]
     scrolling_side_width_ratio := scrolling_config["side_width_ratio"]
     scrolling_gap_px := scrolling_config["gap_px"]
-    scrolling_workspace_count := Max(1, Integer(scrolling_config["workspace_count"]))
+    raw_workspace_count := Integer(scrolling_config["workspace_count"])
+    scrolling_dynamic_workspaces := (raw_workspace_count <= 0)
+    scrolling_workspace_count := scrolling_dynamic_workspaces ? 1 : Max(1, raw_workspace_count)
     scrolling_seed_with_open_windows := scrolling_config["seed_with_open_windows"]
 
     scrolling_workspaces := Map()
@@ -42,12 +46,20 @@ InitScrolling() {
     if scrolling_seed_with_open_windows
         ScrollingSeedFromOpenWindows()
 
+    if scrolling_dynamic_workspaces
+        ScrollingEnsureDynamicWorkspace()
+
     SetTimer(ScrollingTick, 150)
 }
 
 ScrollingModeActive() {
     global scrolling_enabled
     return scrolling_enabled
+}
+
+ScrollingOverviewActive() {
+    global scrolling_overview_active
+    return scrolling_overview_active
 }
 
 ScrollingTick(*) {
@@ -137,6 +149,9 @@ ScrollingEnsureWindowInWorkspace(hwnd) {
 
 ScrollingSwitchWorkspace(index) {
     global scrolling_active_workspace, scrolling_workspace_count
+    global scrolling_dynamic_workspaces
+    if (scrolling_dynamic_workspaces && index > scrolling_workspace_count)
+        ScrollingEnsureWorkspace(index)
     if (index < 1 || index > scrolling_workspace_count)
         return
     if (index = scrolling_active_workspace)
@@ -144,6 +159,44 @@ ScrollingSwitchWorkspace(index) {
 
     ScrollingParkWorkspace(scrolling_active_workspace)
     scrolling_active_workspace := index
+    ScrollingReflow()
+}
+
+ScrollingMoveWindowToWorkspace(index) {
+    global scrolling_active_workspace, scrolling_workspace_count, scrolling_center_index
+    global scrolling_dynamic_workspaces
+
+    if (scrolling_dynamic_workspaces && index > scrolling_workspace_count)
+        ScrollingEnsureWorkspace(index)
+    if (index < 1 || index > scrolling_workspace_count)
+        return
+
+    hwnd := WinExist("A")
+    if !hwnd
+        return
+    if !ScrollingShouldManageWindow(hwnd)
+        return
+
+    current_list := ScrollingGetWorkspaceList(scrolling_active_workspace)
+    current_index := ScrollingIndexOf(current_list, hwnd)
+    if (current_index > 0)
+        current_list.RemoveAt(current_index)
+
+    target_list := ScrollingGetWorkspaceList(index)
+    if (ScrollingIndexOf(target_list, hwnd) = 0)
+        target_list.Push(hwnd)
+
+    if (index = scrolling_active_workspace) {
+        scrolling_center_index[scrolling_active_workspace] := ScrollingIndexOf(target_list, hwnd)
+        ScrollingReflow()
+        return
+    }
+
+    ScrollingParkWindow(hwnd)
+    if (current_list.Length = 0)
+        scrolling_center_index[scrolling_active_workspace] := 0
+    else if (scrolling_center_index[scrolling_active_workspace] > current_list.Length)
+        scrolling_center_index[scrolling_active_workspace] := current_list.Length
     ScrollingReflow()
 }
 
@@ -239,6 +292,9 @@ ScrollingSwap(direction) {
 
 ScrollingReflow() {
     global scrolling_active_workspace, scrolling_center_index, scrolling_workspaces
+    global scrolling_dynamic_workspaces
+    if ScrollingOverviewActive()
+        return
     list := ScrollingGetWorkspaceList(scrolling_active_workspace)
     if (list.Length = 0)
         return
@@ -261,8 +317,8 @@ ScrollingReflow() {
         other_index := (center_index = 1) ? 2 : 1
         left_hwnd := list[other_index]
     } else if (list.Length >= 3) {
-        left_index := ScrollingNeighborIndex(center_index, -1, list.Length, true)
-        right_index := ScrollingNeighborIndex(center_index, 1, list.Length, true)
+        left_index := ScrollingNeighborIndex(center_index, -1, list.Length, scrolling_wrap_enabled)
+        right_index := ScrollingNeighborIndex(center_index, 1, list.Length, scrolling_wrap_enabled)
         if (left_index != center_index)
             left_hwnd := list[left_index]
         if (right_index != center_index)
@@ -284,6 +340,9 @@ ScrollingReflow() {
             continue
         ScrollingMoveToRect(hwnd, layout["center"])
     }
+
+    if scrolling_dynamic_workspaces
+        ScrollingEnsureDynamicWorkspace()
 }
 
 ScrollingComputeLayout() {
@@ -387,6 +446,30 @@ ScrollingGetWorkspaceList(index) {
     return scrolling_workspaces[index]
 }
 
+ScrollingEnsureWorkspace(index) {
+    global scrolling_workspace_count
+    if (index <= scrolling_workspace_count)
+        return
+    loop index - scrolling_workspace_count {
+        new_index := scrolling_workspace_count + A_Index
+        ScrollingGetWorkspaceList(new_index)
+    }
+    scrolling_workspace_count := index
+}
+
+ScrollingEnsureDynamicWorkspace() {
+    global scrolling_workspace_count, scrolling_active_workspace
+    max_used := 0
+    for index, list in scrolling_workspaces {
+        if (list.Length > 0 && index > max_used)
+            max_used := index
+    }
+    desired := Max(1, max_used + 1)
+    if (scrolling_active_workspace > desired)
+        desired := scrolling_active_workspace
+    ScrollingEnsureWorkspace(desired)
+}
+
 ScrollingPruneList(list) {
     cleaned := []
     for _, hwnd in list {
@@ -397,4 +480,21 @@ ScrollingPruneList(list) {
         cleaned.Push(hwnd)
     }
     return cleaned
+}
+
+ScrollingGetSnapshot() {
+    global scrolling_active_workspace, scrolling_center_index
+    list := ScrollingGetWorkspaceList(scrolling_active_workspace)
+    if (list.Length = 0)
+        return Map("list", [], "center_index", 0)
+
+    list := ScrollingPruneList(list)
+    if (list.Length = 0)
+        return Map("list", [], "center_index", 0)
+
+    center_index := scrolling_center_index[scrolling_active_workspace]
+    if (center_index <= 0 || center_index > list.Length)
+        center_index := 1
+
+    return Map("list", list, "center_index", center_index)
 }

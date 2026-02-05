@@ -92,6 +92,9 @@ Enter Command Mode with `super + ;`.
 - `modes.carousel.layout_mode`: `four_slots`, `two_slots_tb`, or `one_side_full` (overflow stacks in center).
 - `modes.carousel.full_side`: `left` or `right` when using `one_side_full`.
 - `modes.scrolling`: scrolling layout settings (center/side width ratios, gap, workspaces).
+- `modes.scrolling.workspace_count`: number of workspaces (set to `0` for dynamic + one empty workspace; up to 9 hotkeys supported).
+- Scrolling hotkeys: `super + 1..9` switch workspace, `super + shift + 1..9` move active window.
+- Scrolling overview: `super + o` opens a horizontal overview (no wrapping).
 - `helper`: command overlay settings.
 - `reload`: hotkey and file watch settings for config reload.
 
