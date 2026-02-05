@@ -36,6 +36,7 @@ FocusOrRun(winTitle, exePath, hotkey_id, app_config := "", *) {
     if target_hwnd {
         if (current_hwnd = target_hwnd) {
             if last_window.Has(hotkey_id) && WinExist("ahk_id " last_window[hotkey_id]) {
+                SetCarouselFocusSource("app_hotkey", last_window[hotkey_id], 800)
                 ActivateAppWindow(last_window[hotkey_id])
             }
             return
@@ -43,8 +44,10 @@ FocusOrRun(winTitle, exePath, hotkey_id, app_config := "", *) {
         if current_hwnd && (current_hwnd != target_hwnd) {
             last_window[hotkey_id] := current_hwnd
         }
+        SetCarouselFocusSource("app_hotkey", target_hwnd, 800)
         ActivateAppWindow(target_hwnd)
     } else {
+        SetCarouselFocusSource("app_hotkey", 0, 3000)
         RunResolved(exePath, app_config)
     }
 }

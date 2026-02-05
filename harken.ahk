@@ -68,6 +68,8 @@ window_nav_modifier := super_key
 
 #Include src/lib/window_manager.ahk
 #Include src/lib/directional_focus.ahk
+#Include src/lib/carousel.ahk
+#Include src/lib/scrolling_mode.ahk
 #Include src/lib/focus_border.ahk
 #Include src/lib/window_walker.ahk
 #Include src/hotkeys/global_hotkey.ahk
@@ -76,6 +78,9 @@ window_nav_modifier := super_key
 #Include src/hotkeys/directional_focus.ahk
 #Include src/hotkeys/window_walker.ahk
 #Include src/hotkeys/unbound.ahk
+
+InitCarousel()
+InitScrolling()
 
 DefaultConfig() {
     return Map(
@@ -124,7 +129,7 @@ DefaultConfig() {
                 "right", 4
             ),
             "gap_px", 0,
-            "exceptions_regex", "(Shell_TrayWnd|Shell_SecondaryTrayWnd|WorkerW|XamlExplorerHostIslandWindow)"
+            "exceptions_regex", "(Progman|Shell_TrayWnd|Shell_SecondaryTrayWnd|WorkerW|XamlExplorerHostIslandWindow|XamlExplorerHostIslandWindow_WASDK|#32768|tooltips_class32|SysShadow|MultitaskingViewFrame|TaskSwitcherWnd|Window Class|Winit Thread Event Target|PseudoConsoleWindow)"
         ),
         "directional_focus", Map(
             "enabled", true,
@@ -145,6 +150,26 @@ DefaultConfig() {
             "border_thickness", 4,
             "corner_radius", 16,
             "update_interval_ms", 20
+        ),
+        "modes", Map(
+            "active", "",
+            "carousel", Map(
+                "auto_snap_center_on_focus", true,
+                "default_home_quadrant", "tl",
+                "excluded_apps", ["PowerToys.PowerLauncher.exe"],
+                "corner_width_ratio", 0.25,
+                "corner_height_ratio", 0.5,
+                "layout_mode", "four_slots",
+                "full_side", "left"
+            ),
+            "scrolling", Map(
+                "wrap_enabled", true,
+                "center_width_ratio", 0.5,
+                "side_width_ratio", 0.25,
+                "gap_px", 0,
+                "workspace_count", 1,
+                "seed_with_open_windows", true
+            )
         ),
         "helper", Map(
             "enabled", true,

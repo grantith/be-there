@@ -23,6 +23,17 @@ global focus_border_gui_bottom := 0
 global focus_border_gui_left := 0
 global focus_border_gui_right := 0
 global focus_border_ahk_color := ""
+global flash_until := 0
+global flash_color := 0xB0B0B0
+global prev_color := 0
+global prev_visible := false
+global prev_hwnd := 0
+global prev_ax := 0
+global prev_ay := 0
+global prev_aw := 0
+global prev_ah := 0
+global last_real_active_hwnd := 0
+global focus_border_watchdog_active := false
 if focus_border_enabled {
     ; ------------- User Settings -------------
     border_color := ParseHexColor(focus_config["border_color"])   ; Hex color (#RRGGBB)
@@ -35,6 +46,7 @@ if focus_border_enabled {
 
     StartFocusBorderHelper()
     StartFocusBorderEventHooks(update_interval)
+    StartFocusBorderWatchdog()
     OnExit(StopFocusBorderHooksAndHelper)
 
     ; Global variables to track the last active window's position & size.
@@ -55,7 +67,16 @@ if focus_border_enabled {
         global prev_color, prev_visible
         global flash_until, flash_color
         global focus_border_last_update
+        global focus_border_use_ahk, focus_border_helper_hwnd
         focus_border_last_update := A_TickCount
+
+        if !focus_border_use_ahk {
+            helper_hwnd := EnsureFocusBorderHelperWindow()
+            if !helper_hwnd {
+                prev_visible := false
+                prev_hwnd := 0
+            }
+        }
 
         active_hwnd := DllCall("GetForegroundWindow", "ptr")
         if (!active_hwnd || !WinExist("ahk_id " active_hwnd)) {
@@ -64,14 +85,46 @@ if focus_border_enabled {
             prev_visible := false
             return
         }
+        active_exe := WinGetProcessName("ahk_id " active_hwnd)
+        if (active_exe = "harken_focus_border_helper.exe") {
+            if prev_visible
+                SendFocusBorderUpdate(false, 0, 0, 0, 0, "#000000", border_thickness, corner_radius)
+            prev_visible := false
+            FocusBorderScheduleReacquire(250)
+            return
+        }
         class_name := WinGetClass("ahk_id " active_hwnd)
+        if Window.IsException("ahk_id " active_hwnd) {
+            if prev_visible
+                SendFocusBorderUpdate(false, 0, 0, 0, 0, "#000000", border_thickness, corner_radius)
+            prev_visible := false
+            FocusBorderScheduleReacquire()
+            return
+        }
+        ex_style := WinGetExStyle("ahk_id " active_hwnd)
+        if ((ex_style & 0x80) && !(ex_style & 0x40000)) {
+            if prev_visible
+                SendFocusBorderUpdate(false, 0, 0, 0, 0, "#000000", border_thickness, corner_radius)
+            prev_visible := false
+            FocusBorderScheduleReacquire()
+            return
+        }
+        style := WinGetStyle("ahk_id " active_hwnd)
+        if !(style & 0x10000000) {
+            if prev_visible
+                SendFocusBorderUpdate(false, 0, 0, 0, 0, "#000000", border_thickness, corner_radius)
+            prev_visible := false
+            FocusBorderScheduleReacquire()
+            return
+        }
         if (class_name = "Progman" || class_name = "WorkerW" || class_name = "Shell_TrayWnd" || class_name = "Shell_SecondaryTrayWnd") {
             if prev_visible
                 SendFocusBorderUpdate(false, 0, 0, 0, 0, "#000000", border_thickness, corner_radius)
             prev_visible := false
+            FocusBorderScheduleReacquire()
             return
         }
-        style := WinGetStyle("ahk_id " active_hwnd)
+        last_real_active_hwnd := active_hwnd
         if (style & 0x20000000) {  ; WS_MINIMIZE flag
             if prev_visible
                 SendFocusBorderUpdate(false, 0, 0, 0, 0, "#000000", border_thickness, corner_radius)
@@ -89,6 +142,12 @@ if focus_border_enabled {
             ah := bottom - ay
         } else {
             WinGetPos(&ax, &ay, &aw, &ah, "ahk_id " active_hwnd)
+        }
+        if (aw <= 0 || ah <= 0) {
+            if prev_visible
+                SendFocusBorderUpdate(false, 0, 0, 0, 0, "#000000", border_thickness, corner_radius)
+            prev_visible := false
+            return
         }
 
         if (flash_until > A_TickCount)
@@ -125,8 +184,8 @@ FlashFocusBorder(color := 0xB0B0B0, duration_ms := 130) {
 
 StartFocusBorderHelper() {
     global focus_border_helper_pid, focus_border_helper_hwnd, focus_border_helper_path
-    if focus_border_helper_pid
-        return
+    global focus_border_use_ahk, focus_border_fallback_toast_shown
+    StopFocusBorderHelper()
     helper_path := ResolveFocusBorderHelperPath()
     if !helper_path {
         EnableAhkFocusBorder("helper missing")
@@ -142,6 +201,10 @@ StartFocusBorderHelper() {
     focus_border_helper_hwnd := WaitForFocusBorderHelperWindow()
     if !focus_border_helper_hwnd
         EnableAhkFocusBorder("helper window not found")
+    else {
+        focus_border_use_ahk := false
+        focus_border_fallback_toast_shown := false
+    }
 }
 
 StopFocusBorderHelper(*) {
@@ -156,6 +219,7 @@ StopFocusBorderHelper(*) {
 StopFocusBorderHooksAndHelper(*) {
     StopFocusBorderEventHooks()
     StopFocusBorderHelper()
+    StopFocusBorderWatchdog()
     StopAhkFocusBorder()
 }
 
@@ -315,7 +379,73 @@ SendFocusBorderUpdate(visible, x, y, w, h, color_hex, thickness, radius) {
         "radius", radius
     )
     json := Jxon_Dump(payload, 0)
+    if SendCopyData(hwnd, json)
+        return true
+
+    RestartFocusBorderHelper()
+    hwnd := EnsureFocusBorderHelperWindow()
+    if !hwnd {
+        EnableAhkFocusBorder("helper restart failed")
+        return UpdateAhkFocusBorder(visible, x, y, w, h, color_hex, thickness)
+    }
     return SendCopyData(hwnd, json)
+}
+
+FocusBorderScheduleReacquire(delay_ms := 200) {
+    SetTimer(DoFocusBorderReacquire, -delay_ms)
+}
+
+DoFocusBorderReacquire(*) {
+    global prev_visible
+    prev_visible := false
+    ScheduleFocusBorderUpdate()
+}
+
+RestartFocusBorderHelper() {
+    global prev_visible, prev_hwnd
+    prev_visible := false
+    prev_hwnd := 0
+    StopFocusBorderHelper()
+    StartFocusBorderHelper()
+}
+
+StartFocusBorderWatchdog(interval_ms := 1200) {
+    global focus_border_watchdog_active
+    if focus_border_watchdog_active
+        return
+    focus_border_watchdog_active := true
+    SetTimer(FocusBorderWatchdogTick, interval_ms)
+}
+
+StopFocusBorderWatchdog() {
+    global focus_border_watchdog_active
+    if !focus_border_watchdog_active
+        return
+    SetTimer(FocusBorderWatchdogTick, 0)
+    focus_border_watchdog_active := false
+}
+
+FocusBorderWatchdogTick(*) {
+    global focus_border_enabled, focus_border_use_ahk
+    global focus_border_helper_hwnd, focus_border_last_update
+    global prev_hwnd, prev_visible
+
+    if !focus_border_enabled
+        return
+
+    if !focus_border_use_ahk {
+        helper_hwnd := EnsureFocusBorderHelperWindow()
+        if !helper_hwnd {
+            prev_visible := false
+            prev_hwnd := 0
+            return
+        }
+    }
+
+    if (A_TickCount - focus_border_last_update > 1500) {
+        prev_visible := false
+        ScheduleFocusBorderUpdate()
+    }
 }
 
 EnableAhkFocusBorder(reason := "") {

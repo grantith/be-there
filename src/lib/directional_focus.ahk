@@ -23,12 +23,25 @@ global directional_focus_last_selected_overlap := ""
 global directional_focus_last_filtered_list := ""
 
 DirectionalFocus(direction) {
+    if (ScrollingModeActive() && (direction = "left" || direction = "right")) {
+        ScrollingMove(direction)
+        return
+    }
     if !Config.Has("directional_focus") || !Config["directional_focus"]["enabled"]
         return
 
     active_hwnd := WinExist("A")
-    if !active_hwnd || Window.IsException("ahk_id " active_hwnd)
+    if !active_hwnd
         return
+    if Window.IsException("ahk_id " active_hwnd) {
+        global last_real_active_hwnd
+        if (last_real_active_hwnd && WinExist("ahk_id " last_real_active_hwnd)
+            && !Window.IsException("ahk_id " last_real_active_hwnd)) {
+            active_hwnd := last_real_active_hwnd
+        } else {
+            return
+        }
+    }
 
     WinGetPosEx(&ax, &ay, &aw, &ah, "ahk_id " active_hwnd)
     if (aw <= 0 || ah <= 0)
@@ -77,6 +90,7 @@ DirectionalFocus(direction) {
         if (history_target != 0 && CandidateListHas(candidates, history_target)) {
             ResetDirectionalDebugTracking()
             directional_focus_last_reason := "history"
+            SetCarouselFocusSource("directional", history_target, 400)
             directional_focus_last_activated_hwnd := ActivateWindow(history_target)
             directional_focus_last_activation_match := (directional_focus_last_activated_hwnd = history_target)
             UpdateDirectionalFocusDebug("direction", direction, active, candidates, [], history_target, z_map)
@@ -90,6 +104,7 @@ DirectionalFocus(direction) {
             if (last_stacked != 0) {
                 ResetDirectionalDebugTracking()
                 directional_focus_last_reason := "last_stacked"
+                SetCarouselFocusSource("directional", last_stacked, 400)
                 directional_focus_last_activated_hwnd := ActivateWindow(last_stacked)
                 directional_focus_last_activation_match := (directional_focus_last_activated_hwnd = last_stacked)
                 UpdateDirectionalFocusDebug("direction", direction, active, candidates, [], last_stacked, z_map)
@@ -102,6 +117,7 @@ DirectionalFocus(direction) {
     ResetDirectionalDebugTracking()
     best := FindDirectionalBest(active, candidates, direction, prefer_topmost, frontmost_guard, overlap_min, z_map)
     if (best is Map) {
+        SetCarouselFocusSource("directional", best["hwnd"], 400)
         directional_focus_last_activated_hwnd := ActivateWindow(best["hwnd"])
         directional_focus_last_activation_match := (directional_focus_last_activated_hwnd = best["hwnd"])
         UpdateDirectionalFocusDebug("direction", direction, active, candidates, [], best["hwnd"], z_map)
@@ -114,12 +130,23 @@ DirectionalFocus(direction) {
 }
 
 DirectionalFocusStacked(direction) {
+    if ScrollingModeActive()
+        return
     if !Config.Has("directional_focus") || !Config["directional_focus"]["enabled"]
         return
 
     active_hwnd := WinExist("A")
-    if !active_hwnd || Window.IsException("ahk_id " active_hwnd)
+    if !active_hwnd
         return
+    if Window.IsException("ahk_id " active_hwnd) {
+        global last_real_active_hwnd
+        if (last_real_active_hwnd && WinExist("ahk_id " last_real_active_hwnd)
+            && !Window.IsException("ahk_id " last_real_active_hwnd)) {
+            active_hwnd := last_real_active_hwnd
+        } else {
+            return
+        }
+    }
 
     WinGetPosEx(&ax, &ay, &aw, &ah, "ahk_id " active_hwnd)
     if (aw <= 0 || ah <= 0)
@@ -181,6 +208,7 @@ DirectionalFocusStacked(direction) {
 
     ResetDirectionalDebugTracking()
     directional_focus_last_reason := "stacked_cycle"
+    SetCarouselFocusSource("directional", ordered[next_index]["hwnd"], 400)
     directional_focus_last_activated_hwnd := ActivateWindow(ordered[next_index]["hwnd"])
     directional_focus_last_activation_match := (directional_focus_last_activated_hwnd = ordered[next_index]["hwnd"])
     UpdateDirectionalFocusDebug("stacked", direction, active, [], ordered, ordered[next_index]["hwnd"], z_map)
@@ -412,6 +440,9 @@ GetStackedWindows(active, threshold, stack_tolerance, cross_monitor, z_map := ""
 
 IsDirectionalCandidate(hwnd, active, cross_monitor) {
     if !hwnd
+        return false
+    exe_name := WinGetProcessName("ahk_id " hwnd)
+    if (exe_name = "harken_focus_border_helper.exe")
         return false
     if Window.IsException("ahk_id " hwnd)
         return false

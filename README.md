@@ -79,12 +79,19 @@ Enter Command Mode with `super + ;`.
 - `super_key`: key or modifier chord used as the super modifier (e.g., `CapsLock`, `Ctrl+Shift+Alt`).
 - `apps`: list of app bindings with `hotkey`, `win_title`, and `run` command.
 - `apps[].run_paths`: optional list of directories to search for the executable.
+- `apps[].home_quadrant`: optional carousel home (`tl`, `tr`, `bl`, `br`).
+- `apps[].carousel_excluded`: optional flag to ignore carousel snapping.
 - `global_hotkeys`: array of scoped hotkey bindings (set `target_exes` empty for global use).
 - `window`: resize/move steps and hotkeys (including move mode).
 - `window_selector`: Window Selector settings (hotkey, match fields, display limits).
 - `window_manager`: grid size, margins, gaps, and ignored window classes.
 - `directional_focus`: directional focus settings (stacked threshold, stack tolerance, topmost preference, last-stacked preference, frontmost guard, perpendicular overlap min, cross-monitor, debug).
 - `focus_border`: overlay appearance and update interval (including command mode color).
+- `modes.active`: active layout mode (`carousel` or `scrolling`; any other value disables modes).
+- `modes.carousel`: optional snapping behavior (layout modes, auto-center on focus, home quadrants, and corner sizing).
+- `modes.carousel.layout_mode`: `four_slots`, `two_slots_tb`, or `one_side_full` (overflow stacks in center).
+- `modes.carousel.full_side`: `left` or `right` when using `one_side_full`.
+- `modes.scrolling`: scrolling layout settings (center/side width ratios, gap, workspaces).
 - `helper`: command overlay settings.
 - `reload`: hotkey and file watch settings for config reload.
 

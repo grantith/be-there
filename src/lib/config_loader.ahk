@@ -15,7 +15,9 @@ LoadConfig(config_path, default_config := Map()) {
         }
     }
 
+    NormalizeModesConfig(config)
     errors := ValidateConfig(config, ConfigSchema())
+    ValidateModes(config, errors)
 
     return Map(
         "config", config,
@@ -32,7 +34,9 @@ ConfigSchema() {
             "hotkey", "string",
             "win_title", "string",
             "run", "string",
-            "run_paths", OptionalSpec(["string"])
+            "run_paths", OptionalSpec(["string"]),
+            "home_quadrant", OptionalSpec("string"),
+            "carousel_excluded", OptionalSpec("bool")
         )],
         "global_hotkeys", [Map(
             "enabled", "bool",
@@ -91,6 +95,26 @@ ConfigSchema() {
             "corner_radius", "number",
             "update_interval_ms", "number"
         ),
+        "modes", Map(
+            "active", "string",
+            "carousel", Map(
+                "auto_snap_center_on_focus", "bool",
+                "default_home_quadrant", "string",
+                "excluded_apps", ["string"],
+                "corner_width_ratio", "number",
+                "corner_height_ratio", "number",
+                "layout_mode", "string",
+                "full_side", "string"
+            ),
+            "scrolling", Map(
+                "wrap_enabled", "bool",
+                "center_width_ratio", "number",
+                "side_width_ratio", "number",
+                "gap_px", "number",
+                "workspace_count", "number",
+                "seed_with_open_windows", "bool"
+            )
+        ),
         "helper", Map(
             "enabled", "bool",
             "overlay_opacity", "number"
@@ -112,6 +136,37 @@ ValidateConfig(config, schema) {
     errors := []
     ValidateNode(config, schema, "config", errors)
     return errors
+}
+
+NormalizeModesConfig(config) {
+    if !config.Has("modes")
+        return
+
+    modes := config["modes"]
+
+    if config.Has("carousel") {
+        modes["carousel"] := DeepMergeMaps(modes["carousel"], config["carousel"])
+        config.Delete("carousel")
+    }
+
+    if config.Has("scrolling") {
+        modes["scrolling"] := DeepMergeMaps(modes["scrolling"], config["scrolling"])
+        config.Delete("scrolling")
+    }
+
+    if modes.Has("carousel") && modes["carousel"].Has("enabled")
+        modes["carousel"].Delete("enabled")
+    if modes.Has("scrolling") && modes["scrolling"].Has("enabled")
+        modes["scrolling"].Delete("enabled")
+
+    if !modes.Has("active")
+        modes["active"] := ""
+    if !(modes["active"] = "carousel" || modes["active"] = "scrolling")
+        modes["active"] := ""
+}
+
+ValidateModes(config, errors) {
+    return
 }
 
 ValidateNode(value, spec, path, errors) {
