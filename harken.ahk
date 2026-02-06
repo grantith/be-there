@@ -18,7 +18,7 @@ global Config := config_result["config"]
 config_errors := config_result["errors"]
 if (config_errors.Length) {
     LogConfigErrors(config_errors, config_dir "\config.errors.log", config_path)
-    ExitApp
+    return
 }
 global AppState := LoadState()
 InitCommandToast()
@@ -290,6 +290,57 @@ RegisterSuperComboHotkey(hotkey_name, callback) {
         Hotkey(key " & " hotkey_name, callback)
 }
 
+MatchAppWindow(app, hwnd := 0) {
+    if !(app is Map)
+        return false
+    if (hwnd = 0)
+        hwnd := WinGetID("A")
+    if !hwnd
+        return false
+
+    if app.Has("match") && (app["match"] is Map)
+        return MatchWindowFields(app["match"], hwnd)
+
+    if app.Has("win_title") && app["win_title"] != "" {
+        if (hwnd = WinGetID("A"))
+            return WinActive(app["win_title"])
+    }
+
+    return false
+}
+
+MatchWindowFields(match, hwnd) {
+    exe_name := WinGetProcessName("ahk_id " hwnd)
+    class_name := WinGetClass("ahk_id " hwnd)
+    title := WinGetTitle("ahk_id " hwnd)
+
+    if !MatchField(match, "exe", exe_name)
+        return false
+    if !MatchField(match, "class", class_name)
+        return false
+    if !MatchField(match, "title", title)
+        return false
+
+    return true
+}
+
+MatchField(match, field_key, value) {
+    if !match.Has(field_key) || match[field_key] = ""
+        return true
+
+    pattern := match[field_key]
+    regex_key := field_key "_regex"
+    use_regex := match.Has(regex_key) && match[regex_key]
+
+    if use_regex {
+        if !RegExMatch(pattern, "^\(\?i\)")
+            pattern := "(?i)" pattern
+        return RegExMatch(value, pattern) != 0
+    }
+
+    return StrLower(value) = StrLower(pattern)
+}
+
 OpenWindowInspector() {
     ShowWindowInspector()
 }
@@ -311,7 +362,7 @@ OpenNewWindowForActiveApp() {
     if !exe
         return
 
-    app_config := FindAppConfigByExe(exe)
+    app_config := FindAppConfigByWindow(hwnd)
     if (app_config is Map) {
         RunResolved(app_config["run"], app_config)
         return
@@ -320,11 +371,9 @@ OpenNewWindowForActiveApp() {
     RunResolved(exe)
 }
 
-FindAppConfigByExe(exe_name) {
-    exe_lower := StrLower(exe_name)
+FindAppConfigByWindow(hwnd) {
     for _, app in Config["apps"] {
-        win_title := StrLower(app["win_title"])
-        if InStr(win_title, "ahk_exe " exe_lower)
+        if MatchAppWindow(app, hwnd)
             return app
     }
     return ""

@@ -144,6 +144,11 @@ TomlParseValue(value) {
     if (value = "")
         return ""
 
+    if (SubStr(value, 1, 1) = "{" && SubStr(value, -1) = "}") {
+        table_content := Trim(SubStr(value, 2, StrLen(value) - 2))
+        return TomlParseInlineTable(table_content)
+    }
+
     if (SubStr(value, 1, 1) = "[" && SubStr(value, -1) = "]") {
         array_content := Trim(SubStr(value, 2, StrLen(value) - 2))
         return TomlParseArray(array_content)
@@ -170,6 +175,65 @@ TomlParseValue(value) {
         return Float(value)
 
     return value
+}
+
+TomlParseInlineTable(content) {
+    table := Map()
+    if (content = "")
+        return table
+
+    elements := []
+    in_double := false
+    in_single := false
+    escaped := false
+    depth := 0
+    current := ""
+
+    loop parse, content {
+        ch := A_LoopField
+        if (escaped) {
+            current .= ch
+            escaped := false
+            continue
+        }
+
+        if (ch = "\\" && in_double) {
+            escaped := true
+            current .= ch
+            continue
+        }
+
+        if (ch = '"' && !in_single)
+            in_double := !in_double
+        else if (ch = "'" && !in_double)
+            in_single := !in_single
+
+        if (!in_double && !in_single) {
+            if (ch = "[" || ch = "{")
+                depth += 1
+            else if (ch = "]" || ch = "}")
+                depth -= 1
+        }
+
+        if (ch = "," && !in_double && !in_single && depth = 0) {
+            elements.Push(Trim(current))
+            current := ""
+            continue
+        }
+
+        current .= ch
+    }
+
+    if (Trim(current) != "")
+        elements.Push(Trim(current))
+
+    for _, element in elements {
+        kv := TomlSplitKeyValue(element)
+        if (kv.Has("key") && kv["key"] != "")
+            TomlSetNestedKey(table, kv["key"], TomlParseValue(kv["value"]))
+    }
+
+    return table
 }
 
 TomlParseArray(content) {

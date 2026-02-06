@@ -306,6 +306,8 @@ BuildAppRows() {
     global Config
     rows := []
     for _, app in Config["apps"] {
+        if !app.Has("hotkey") || app["hotkey"] = ""
+            continue
         icon_path := ResolveAppIconPath(app)
         rows.Push(Map(
             "hotkey", app["hotkey"],
@@ -327,7 +329,7 @@ BuildAppsKey(apps) {
 ResolveAppIconPath(app) {
     if !(app is Map)
         return ""
-    if app.Has("win_title") {
+    if app.Has("win_title") && app["win_title"] != "" {
         path := FindAppWindowPath(app["win_title"])
         if (path != "")
             return path

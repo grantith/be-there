@@ -18,6 +18,7 @@ LoadConfig(config_path, default_config := Map()) {
     NormalizeSuperKeyConfig(config)
     errors := ValidateConfig(config, ConfigSchema())
     ValidateSuperKeys(config, errors)
+    ValidateApps(config, errors)
 
     return Map(
         "config", config,
@@ -31,10 +32,26 @@ ConfigSchema() {
         "super_key", ["string"],
         "apps", [Map(
             "id", "string",
-            "hotkey", "string",
-            "win_title", "string",
-            "run", "string",
-            "run_paths", OptionalSpec(["string"])
+            "hotkey", OptionalSpec("string"),
+            "win_title", OptionalSpec("string"),
+            "match", OptionalSpec(Map(
+                "exe", OptionalSpec("string"),
+                "exe_regex", OptionalSpec("bool"),
+                "class", OptionalSpec("string"),
+                "class_regex", OptionalSpec("bool"),
+                "title", OptionalSpec("string"),
+                "title_regex", OptionalSpec("bool")
+            )),
+            "run", OptionalSpec("string"),
+            "run_paths", OptionalSpec(["string"]),
+            "focus_border", OptionalSpec(Map(
+                "border_color", OptionalSpec("string"),
+                "move_mode_color", OptionalSpec("string"),
+                "command_mode_color", OptionalSpec("string"),
+                "border_thickness", OptionalSpec("number"),
+                "corner_radius", OptionalSpec("number"),
+                "update_interval_ms", OptionalSpec("number")
+            ))
         )],
         "global_hotkeys", [Map(
             "enabled", "bool",
@@ -131,6 +148,42 @@ ValidateSuperKeys(config, errors) {
     super_keys := config["super_key"]
     if (super_keys is Array && super_keys.Length = 0)
         errors.Push("config.super_key should contain at least one key")
+}
+
+ValidateApps(config, errors) {
+    if !config.Has("apps") || !(config["apps"] is Array)
+        return
+
+    for index, app in config["apps"] {
+        if !(app is Map)
+            continue
+
+        has_hotkey := app.Has("hotkey") && (app["hotkey"] != "")
+        has_win_title := app.Has("win_title") && (app["win_title"] != "")
+        has_match := app.Has("match") && (app["match"] is Map)
+
+        if !has_win_title && !has_match
+            errors.Push("config.apps[" index "] must define win_title or match")
+
+        if has_hotkey && (!app.Has("run") || app["run"] = "")
+            errors.Push("config.apps[" index "].run is required when hotkey is set")
+
+        if has_match {
+            match := app["match"]
+            has_exe := match.Has("exe") && (match["exe"] != "")
+            has_class := match.Has("class") && (match["class"] != "")
+            has_title := match.Has("title") && (match["title"] != "")
+            if !has_exe && !has_class && !has_title
+                errors.Push("config.apps[" index "].match must define exe, class, or title")
+
+            if (match.Has("exe_regex") && !has_exe)
+                errors.Push("config.apps[" index "].match.exe_regex requires exe")
+            if (match.Has("class_regex") && !has_class)
+                errors.Push("config.apps[" index "].match.class_regex requires class")
+            if (match.Has("title_regex") && !has_title)
+                errors.Push("config.apps[" index "].match.title_regex requires title")
+        }
+    }
 }
 
 ValidateNode(value, spec, path, errors) {

@@ -20,7 +20,8 @@ RegisterUnboundHotkeys() {
         AddUsedKey(used_keys, reload_config["hotkey"])
 
     for _, app in Config["apps"] {
-        AddUsedKey(used_keys, app["hotkey"])
+        if app.Has("hotkey") && app["hotkey"] != ""
+            AddUsedKey(used_keys, app["hotkey"])
     }
 
     for _, hotkey_config in Config["global_hotkeys"] {

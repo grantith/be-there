@@ -76,8 +76,10 @@ Enter Command Mode with `super + ;`.
 
 ### Default Config Keys
 - `super_key`: key or list of keys used as the super modifier (e.g., `CapsLock` or `["F24", "CapsLock"]`).
-- `apps`: list of app bindings with `hotkey`, `win_title`, and `run` command.
+- `apps`: list of app bindings with `hotkey`, `win_title`/`match`, and `run` command. Omit `hotkey` for matcher-only entries (they won't appear in the Command Overlay).
 - `apps[].run_paths`: optional list of directories to search for the executable.
+- `apps[].match`: optional match map with `exe`, `class`, `title`, and `*_regex` flags (exact match is case-insensitive by default; regex is also case-insensitive).
+- `apps[].focus_border`: optional per-app focus border overrides (colors, thickness, and corner radius).
 - `global_hotkeys`: array of scoped hotkey bindings (set `target_exes` empty for global use).
 - `window`: resize/move steps and hotkeys (including move mode).
 - `window_selector`: Window Selector settings (hotkey, match fields, display limits).
@@ -92,7 +94,8 @@ Enter Command Mode with `super + ;`.
 - Common forms: plain title text, `ahk_exe <exe>`, `ahk_class <class>`, `ahk_pid <pid>`.
 - Use `ahk_exe` for stable matching when window titles change (e.g., tabs/documents).
 - Plain title text supports AutoHotkey's standard title matching and wildcards (e.g., `* - Notepad`).
-- `ahk_exe`, `ahk_class`, and `ahk_pid` are exact matches; wildcards/regex are not supported today but could be added later.
+- `ahk_exe`, `ahk_class`, and `ahk_pid` are exact matches; `win_title` does not support regex (use `apps[].match` for regex).
+- `apps[].match` provides explicit matching by `exe`, `class`, and/or `title` with optional `*_regex` flags (non-regex is exact, case-insensitive).
 
 ### Path Expansion
 - `apps[].run_paths` supports environment variables like `%APPDATA%` and `%LOCALAPPDATA%`.

@@ -4,7 +4,7 @@
 FocusOrRun(winTitle, exePath, hotkey_id, app_config := "", *) {
     static last_window := Map()
     target_hwnd := 0
-    hwnds := WinGetList(winTitle)
+    hwnds := GetAppWindowList(winTitle, app_config)
     current_hwnd := WinGetID("A")
 
     if (hwnds.Length) {
@@ -47,6 +47,24 @@ FocusOrRun(winTitle, exePath, hotkey_id, app_config := "", *) {
     } else {
         RunResolved(exePath, app_config)
     }
+}
+
+GetAppWindowList(win_title, app_config := "") {
+    if (app_config is Map && app_config.Has("match") && app_config["match"] is Map) {
+        return GetWindowsByMatch(app_config["match"])
+    }
+    if !win_title
+        return []
+    return WinGetList(win_title)
+}
+
+GetWindowsByMatch(match) {
+    matches := []
+    for _, hwnd in WinGetList() {
+        if MatchWindowFields(match, hwnd)
+            matches.Push(hwnd)
+    }
+    return matches
 }
 
 RunResolved(command, app_config := "") {

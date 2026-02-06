@@ -50,6 +50,11 @@ win_title = "ahk_exe discord.exe"
 run = "discord"
 run_paths = []
 
+[[apps]]
+id = "vscode-border"
+match = { exe = "Code.exe", title = " - Visual Studio Code$", title_regex = true }
+focus_border = { border_color = "#4D96FF", border_thickness = 3 }
+
 [[global_hotkeys]]
 enabled = true
 hotkey = "Alt"
