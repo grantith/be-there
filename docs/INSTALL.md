@@ -5,7 +5,7 @@ harken supports two distribution formats:
 ## Option A: Source (recommended for customization)
 1. Install [AutoHotkey v2](https://github.com/AutoHotkey/AutoHotkey).
 2. Download the source release (zip) or clone the repo.
-3. Copy `config/config.example.json` to `~/.config/harken/config.json`.
+3. Copy `config/config.example.toml` to `~/.config/harken/harken.toml`.
 4. Run `harken.ahk`.
 
 ## Option B: Compiled EXE (recommended for non-technical users)

@@ -3,9 +3,8 @@ LoadConfig(config_path, default_config := Map()) {
     errors := []
 
     if FileExist(config_path) {
-        json_text := FileRead(config_path)
         try {
-            user_config := Jxon_Load(&json_text)
+            user_config := TomlLoadFile(config_path)
             config := DeepMergeMaps(config, user_config)
         } catch as err {
             errors.Push("config.parse: " err.Message)
@@ -87,6 +86,7 @@ ConfigSchema() {
             "enabled", "bool",
             "border_color", "string",
             "move_mode_color", "string",
+            "command_mode_color", "string",
             "border_thickness", "number",
             "corner_radius", "number",
             "update_interval_ms", "number"

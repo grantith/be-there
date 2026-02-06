@@ -13,6 +13,7 @@ if focus_border_enabled {
     ; ------------- User Settings -------------
     border_color := ParseHexColor(focus_config["border_color"])   ; Hex color (#RRGGBB)
     move_mode_color := ParseHexColor(focus_config["move_mode_color"]) ; Hex color (#RRGGBB)
+    command_mode_color := ParseHexColor(focus_config["command_mode_color"]) ; Hex color (#RRGGBB)
     border_thickness := Integer(focus_config["border_thickness"])      ; Border thickness in pixels
     corner_radius := Integer(focus_config["corner_radius"])        ; Corner roundness in pixels
     update_interval := Integer(focus_config["update_interval_ms"])      ; How often (ms) to check/update active window
@@ -43,7 +44,7 @@ if focus_border_enabled {
     ; -------------------------------
     UpdateBorder(*) {
         global overlay, h_overlay
-        global border_thickness, corner_radius, border_color, move_mode_color, current_color
+        global border_thickness, corner_radius, border_color, move_mode_color, command_mode_color, current_color
         global prev_hwnd, prev_ax, prev_ay, prev_aw, prev_ah
 
         ; Get the currently active window.
@@ -54,6 +55,11 @@ if focus_border_enabled {
         }
         ; If no active window found or it's gone, hide the overlay.
         if (!active_hwnd || !WinExist("ahk_id " active_hwnd)) {
+            overlay.Hide()
+            return
+        }
+        class_name := WinGetClass("ahk_id " active_hwnd)
+        if (class_name = "Progman" || class_name = "WorkerW" || class_name = "Shell_TrayWnd" || class_name = "Shell_SecondaryTrayWnd") {
             overlay.Hide()
             return
         }
@@ -80,7 +86,7 @@ if focus_border_enabled {
         if (flash_until > A_TickCount)
             desired_color := flash_color
         else if ReloadModeActive()
-            desired_color := 0xFFD400
+            desired_color := command_mode_color
         else
             desired_color := Window.IsMoveMode() ? move_mode_color : border_color
         if (desired_color != current_color) {

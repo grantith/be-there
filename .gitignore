@@ -1,5 +1,5 @@
 PLAN.md
-config/config.json
+config/harken.toml
 dist/
 ahk/
 *_PLAN.md

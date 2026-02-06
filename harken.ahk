@@ -2,6 +2,7 @@
 #SingleInstance
 
 #Include src/lib/JXON.ahk
+#Include src/lib/toml.ahk
 #Include src/lib/config_loader.ahk
 #Include src/lib/state_store.ahk
 #Include src/lib/focus_or_run.ahk
@@ -10,7 +11,7 @@
 
 config_dir := GetConfigDir()
 DirCreate(config_dir)
-global config_path := config_dir "\config.json"
+global config_path := config_dir "\harken.toml"
 EnsureConfigExists(config_path, DefaultConfig())
 config_result := LoadConfig(config_path, DefaultConfig())
 global Config := config_result["config"]
@@ -140,8 +141,9 @@ DefaultConfig() {
             "enabled", true,
             "border_color", "#357EC7",
             "move_mode_color", "#2ECC71",
+            "command_mode_color", "#FFD400",
             "border_thickness", 4,
-            "corner_radius", 12,
+            "corner_radius", 16,
             "update_interval_ms", 20
         ),
         "helper", Map(
@@ -198,8 +200,8 @@ EnsureConfigExists(config_path, default_config) {
     if FileExist(config_path)
         return
 
-    config_text := Jxon_Dump(default_config, 2)
-    FileAppend(config_text, config_path)
+    config_text := TomlDump(default_config, ["apps", "global_hotkeys"])
+    FileAppend(config_text, config_path, "UTF-8")
 }
 
 GetConfigDir() {

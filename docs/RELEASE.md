@@ -7,20 +7,20 @@ Include:
 - `harken.ahk`
 - `src/`
 - `tools/`
-- `config/config.example.json`
+- `config/config.example.toml`
 - `README.md`, `LICENSE`, `LICENSES/`
 
 ## 2) Compiled zip
 Include:
 - `harken.exe`
 - `tools/` (optional; requires AutoHotkey for `.ahk` tools)
-- `config/config.example.json`
+- `config/config.example.toml`
 - `README.md`, `LICENSE`, `LICENSES/`
 
 ## Checklist
 - Update `README.md` if config/schema changed.
 - Update `docs/INSTALL.md` if paths or requirements changed.
-- Verify `config/config.example.json` matches defaults.
+- Verify `config/config.example.toml` matches defaults.
 - (Optional) test start/reload and Command Overlay in both variants.
 
 ## GitHub Release Flow
@@ -52,4 +52,4 @@ powershell -ExecutionPolicy Bypass -File tools/build_release.ps1 -Version dev
 Artifacts are written to `dist/`.
 
 ## Tooling
-- The build script also exports `config.example.json` into `dist/` for quick inspection.
+- The build script also exports `config.example.toml` into `dist/` for quick inspection.
