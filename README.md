@@ -75,7 +75,7 @@ Enter Command Mode with `super + ;`.
 - After making changes to your config you can reload the config (the entire program, actually) with `r` while in command mode.
 
 ### Default Config Keys
-- `super_key`: key or modifier chord used as the super modifier (e.g., `CapsLock`, `Ctrl+Shift+Alt`).
+- `super_key`: key or list of keys used as the super modifier (e.g., `CapsLock` or `["F24", "CapsLock"]`).
 - `apps`: list of app bindings with `hotkey`, `win_title`, and `run` command.
 - `apps[].run_paths`: optional list of directories to search for the executable.
 - `global_hotkeys`: array of scoped hotkey bindings (set `target_exes` empty for global use).

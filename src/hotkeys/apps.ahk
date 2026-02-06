@@ -1,6 +1,6 @@
-global Config, super_key
+global Config
 
-HotIf (*) => GetKeyState(super_key, "P")
+HotIf IsSuperKeyPressed
 for _, app in Config["apps"] {
     hotkey_name := app["hotkey"]
     win_title := app["win_title"]

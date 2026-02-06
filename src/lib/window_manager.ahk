@@ -45,8 +45,7 @@ class Window
 
     static __New()
     {
-        global window_nav_modifier
-        HotIf (*) => GetKeyState(window_nav_modifier, 'P')
+        HotIf (*) => IsSuperKeyPressed()
             && !GetKeyState('Shift', 'P')
             && !GetKeyState('Ctrl', 'P')
             && !this.IsMoveMode()
@@ -61,7 +60,7 @@ class Window
         HotIf
 
         ; releasing modifier key destroys gui guides
-        Hotkey('*' window_nav_modifier ' up', ObjBindMethod(Gui_Guides, 'Destroy_Guis'))
+        RegisterSuperKeyHotkey("*", " up", ObjBindMethod(Gui_Guides, 'Destroy_Guis'))
     }
 
     static SetMoveMode(state) => Window.move_mode := state

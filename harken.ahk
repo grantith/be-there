@@ -23,10 +23,12 @@ if (config_errors.Length) {
 global AppState := LoadState()
 InitCommandToast()
 
-super_key := Config["super_key"]
+super_keys := Config["super_key"]
+if !(super_keys is Array)
+    super_keys := [super_keys]
 
-Hotkey("~" super_key, (*) => OnSuperKeyDown())
-if (super_key = "CapsLock")
+RegisterSuperKeyHotkey("~", "", (*) => OnSuperKeyDown())
+if HasSuperKey("CapsLock")
     SetCapsLockState "AlwaysOff"
 
 reload_config := Config["reload"]
@@ -38,7 +40,7 @@ if reload_config["enabled"] {
     global reload_mode_active := false
 
     if reload_config["super_key_required"] {
-        HotIf (*) => GetKeyState(super_key, "P")
+        HotIf IsSuperKeyPressed
         Hotkey(reload_hotkey, (*) => Reload())
         HotIf
     } else {
@@ -46,7 +48,7 @@ if reload_config["enabled"] {
     }
 
     if reload_mode_enabled {
-        Hotkey(super_key " & " reload_mode_hotkey, (*) => ActivateReloadMode(reload_mode_timeout))
+        RegisterSuperComboHotkey(reload_mode_hotkey, (*) => ActivateReloadMode(reload_mode_timeout))
         HotIf ReloadModeActive
         Hotkey(reload_hotkey, (*) => ExecuteCommand(() => Reload()))
         Hotkey("i", (*) => ExecuteCommand(OpenWindowInspector))
@@ -63,9 +65,6 @@ if reload_config["enabled"] && reload_config["watch_enabled"]
 
 SetWinDelay(-1)
 
-; This variable is the modifier key for window navigation hotkeys.
-window_nav_modifier := super_key
-
 #Include src/lib/window_manager.ahk
 #Include src/lib/directional_focus.ahk
 #Include src/lib/focus_border.ahk
@@ -80,7 +79,7 @@ window_nav_modifier := super_key
 DefaultConfig() {
     return Map(
         "config_version", 1,
-        "super_key", "CapsLock",
+        "super_key", ["CapsLock"],
         "apps", [
             Map("id", "files", "hotkey", "e", "win_title", "ahk_exe explorer.exe", "run", "explorer"),
             Map("id", "editor", "hotkey", "v", "win_title", "ahk_exe Code.exe", "run", "code"),
@@ -186,14 +185,14 @@ LogConfigErrors(errors, log_path, config_path := "") {
 }
 
 ShowConfigErrorsGui(details, log_path) {
-    gui := Gui("+AlwaysOnTop", "harken Config Errors")
-    gui.SetFont("s10", "Segoe UI")
-    edit := gui.AddEdit("w760 r18 ReadOnly", details)
-    open_btn := gui.AddButton("xm y+10 w120", "Open Log")
+    error_gui := Gui("+AlwaysOnTop", "harken Config Errors")
+    error_gui.SetFont("s10", "Segoe UI")
+    edit := error_gui.AddEdit("w760 r18 ReadOnly", details)
+    open_btn := error_gui.AddButton("xm y+10 w120", "Open Log")
     open_btn.OnEvent("Click", (*) => Run(log_path))
-    close_btn := gui.AddButton("x+10 yp w120", "Close")
-    close_btn.OnEvent("Click", (*) => gui.Destroy())
-    gui.Show()
+    close_btn := error_gui.AddButton("x+10 yp w120", "Close")
+    close_btn.OnEvent("Click", (*) => error_gui.Destroy())
+    error_gui.Show()
 }
 
 EnsureConfigExists(config_path, default_config) {
@@ -258,6 +257,37 @@ ExecuteCommand(callback) {
 
 OnSuperKeyDown() {
     UpdateCommandToastVisibility()
+}
+
+IsSuperKeyPressed(*) {
+    global super_keys
+    for _, key in super_keys {
+        if GetKeyState(key, "P")
+            return true
+    }
+    return false
+}
+
+HasSuperKey(target_key) {
+    global super_keys
+    target_lower := StrLower(target_key)
+    for _, key in super_keys {
+        if (StrLower(key) = target_lower)
+            return true
+    }
+    return false
+}
+
+RegisterSuperKeyHotkey(prefix, suffix, callback) {
+    global super_keys
+    for _, key in super_keys
+        Hotkey(prefix key suffix, callback)
+}
+
+RegisterSuperComboHotkey(hotkey_name, callback) {
+    global super_keys
+    for _, key in super_keys
+        Hotkey(key " & " hotkey_name, callback)
 }
 
 OpenWindowInspector() {

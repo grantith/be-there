@@ -15,7 +15,9 @@ LoadConfig(config_path, default_config := Map()) {
         }
     }
 
+    NormalizeSuperKeyConfig(config)
     errors := ValidateConfig(config, ConfigSchema())
+    ValidateSuperKeys(config, errors)
 
     return Map(
         "config", config,
@@ -26,7 +28,7 @@ LoadConfig(config_path, default_config := Map()) {
 ConfigSchema() {
     return Map(
         "config_version", "number",
-        "super_key", "string",
+        "super_key", ["string"],
         "apps", [Map(
             "id", "string",
             "hotkey", "string",
@@ -112,6 +114,23 @@ ValidateConfig(config, schema) {
     errors := []
     ValidateNode(config, schema, "config", errors)
     return errors
+}
+
+NormalizeSuperKeyConfig(config) {
+    if !config.Has("super_key")
+        return
+
+    super_value := config["super_key"]
+    if (super_value is String)
+        config["super_key"] := [super_value]
+}
+
+ValidateSuperKeys(config, errors) {
+    if !config.Has("super_key")
+        return
+    super_keys := config["super_key"]
+    if (super_keys is Array && super_keys.Length = 0)
+        errors.Push("config.super_key should contain at least one key")
 }
 
 ValidateNode(value, spec, path, errors) {
