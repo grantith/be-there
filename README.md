@@ -84,6 +84,7 @@ Enter Command Mode with `super + ;`.
 - `apps[].focus_border`: optional per-app focus border overrides (colors, thickness, and corner radius).
 - `global_hotkeys`: array of scoped hotkey bindings (set `target_exes` empty for global use).
 - `window`: resize/move steps and hotkeys (including move mode).
+- `window.minimize_others_hotkey`: optional hotkey to minimize all other windows on the current monitor.
 - `window_selector`: Window Selector settings (hotkey, match fields, display limits).
 - `window_manager`: grid size, margins, gaps, and ignored window classes.
 - `directional_focus`: directional focus settings (stacked threshold, stack tolerance, topmost preference, last-stacked preference, frontmost guard, perpendicular overlap min, cross-monitor, debug).

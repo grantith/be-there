@@ -7,6 +7,9 @@ move_mode_enabled := Config["window"]["move_mode"]["enable"]
 move_mode_cancel_key := Config["window"]["move_mode"]["cancel_key"]
 center_cycle_hotkey := Config["window"]["center_width_cycle_hotkey"]
 cycle_app_windows_hotkey := Config["window"]["cycle_app_windows_hotkey"]
+minimize_others_hotkey := ""
+if Config["window"].Has("minimize_others_hotkey")
+    minimize_others_hotkey := Config["window"]["minimize_others_hotkey"]
 
 last_super_tap := 0
 max_restore := Map()
@@ -179,6 +182,8 @@ if (move_mode_enabled || Config["reload"]["mode_enabled"] || Config["helper"]["e
     RegisterSuperKeyHotkey("", " up", (*) => OnSuperKeyUp())
 }
 
+Hotkey("~LButton", (*) => BeginSuperDrag())
+
 CenterWidthCycle(*) {
     static state := 0
     state := Mod(state + 1, 3)
@@ -313,6 +318,8 @@ Hotkey("^k", (*) => MoveActiveWindow(0, -move_step))
 Hotkey("m", ToggleMaximize)
 Hotkey("q", CloseWindow)
 Hotkey(cycle_app_windows_hotkey, CycleAppWindows)
+if (minimize_others_hotkey != "")
+    Hotkey(minimize_others_hotkey, MinimizeOtherWindows)
 HotIf
 
 Hotkey("!-", MinimizeWindow)
@@ -330,6 +337,46 @@ if move_mode_enabled {
 ExitMoveMode() {
     Window.SetMoveMode(false)
     UpdateCommandToastVisibility()
+}
+
+BeginSuperDrag(*) {
+    if !IsSuperKeyPressed()
+        return
+    if Window.IsMoveMode()
+        return
+    MouseGetPos(, , &hwnd)
+    if !hwnd
+        return
+    if Window.IsException("ahk_id " hwnd)
+        return
+    if (WinGetMinMax("ahk_id " hwnd) = -1)
+        return
+    WinActivate "ahk_id " hwnd
+    DllCall("ReleaseCapture")
+    SendMessage(0xA1, 2, 0, , "ahk_id " hwnd)
+}
+
+MinimizeOtherWindows(*) {
+    active_hwnd := WinGetID("A")
+    if !active_hwnd
+        return
+    active_monitor := Screen.FromWindow("ahk_id " active_hwnd)
+    for _, hwnd in WinGetList() {
+        if (hwnd = active_hwnd)
+            continue
+        if Window.IsException("ahk_id " hwnd)
+            continue
+        if (WinGetMinMax("ahk_id " hwnd) = -1)
+            continue
+        ex_style := WinGetExStyle("ahk_id " hwnd)
+        if (ex_style & 0x80) || (ex_style & 0x8000000)
+            continue
+        if !(WinGetStyle("ahk_id " hwnd) & 0x10000000)
+            continue
+        if (Screen.FromWindow("ahk_id " hwnd) != active_monitor)
+            continue
+        WinMinimize "ahk_id " hwnd
+    }
 }
 
 ActivateMostRecentWindow(exclude_hwnd := 0) {

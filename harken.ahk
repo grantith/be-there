@@ -103,7 +103,8 @@ DefaultConfig() {
                 "cancel_key", "Esc"
             ),
             "cycle_app_windows_hotkey", "c",
-            "center_width_cycle_hotkey", "Space"
+            "center_width_cycle_hotkey", "Space",
+            "minimize_others_hotkey", ""
         ),
         "window_selector", Map(
             "enabled", true,

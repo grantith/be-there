@@ -69,7 +69,8 @@ ConfigSchema() {
                 "cancel_key", "string"
             ),
             "cycle_app_windows_hotkey", "string",
-            "center_width_cycle_hotkey", "string"
+            "center_width_cycle_hotkey", "string",
+            "minimize_others_hotkey", OptionalSpec("string")
         ),
         "window_selector", Map(
             "enabled", "bool",
