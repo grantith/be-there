@@ -92,6 +92,7 @@ exceptions_regex = "(Shell_TrayWnd|Shell_SecondaryTrayWnd|WorkerW|XamlExplorerHo
 top = 6
 left = 4
 right = 4
+bottom = 5
 
 [directional_focus]
 enabled = true

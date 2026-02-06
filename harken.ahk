@@ -121,7 +121,8 @@ DefaultConfig() {
             "margins", Map(
                 "top", 6,
                 "left", 4,
-                "right", 4
+                "right", 4,
+                "bottom", 5
             ),
             "gap_px", 0,
             "exceptions_regex", "(Shell_TrayWnd|Shell_SecondaryTrayWnd|WorkerW|XamlExplorerHostIslandWindow)"

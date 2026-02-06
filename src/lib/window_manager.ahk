@@ -585,6 +585,7 @@ class Screen
     static top_margin := Config["window_manager"]["margins"]["top"]
     static left_margin := Config["window_manager"]["margins"]["left"]
     static right_margin := Config["window_manager"]["margins"]["right"]
+    static bottom_margin := Config["window_manager"]["margins"]["bottom"]
     static activeWindowIsOn => Screen.FromWindow()
     static top    => this.GetScreenCoordinates(this.activeWindowIsOn, 'top')
     static bottom => this.GetScreenCoordinates(this.activeWindowIsOn, 'bottom')
@@ -609,6 +610,8 @@ class Screen
             left += this.left_margin
         if this.right_margin
             right -= this.right_margin
+        if this.bottom_margin
+            bottom -= this.bottom_margin
 
         width  := Abs(right  - left)                                    ; calculate width of screen
         height := Abs(bottom - top)                                     ; calculate height of screen

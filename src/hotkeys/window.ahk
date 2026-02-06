@@ -204,11 +204,12 @@ CenterWidthCycle(*) {
     left_margin := Screen.left_margin
     right_margin := Screen.right_margin
     top_margin := Screen.top_margin
+    bottom_margin := Screen.bottom_margin
     gap_px := Config["window_manager"]["gap_px"]
 
     mx1 += left_margin
     mw := mw - left_margin - right_margin
-    mh := mh - top_margin
+    mh := mh - top_margin - bottom_margin
 
     if (gap_px > 0) {
         mx1 += gap_px

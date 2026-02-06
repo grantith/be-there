@@ -87,7 +87,8 @@ ConfigSchema() {
             "margins", Map(
                 "top", "number",
                 "left", "number",
-                "right", "number"
+                "right", "number",
+                "bottom", "number"
             ),
             "gap_px", "number",
             "exceptions_regex", "string"
