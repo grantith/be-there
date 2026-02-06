@@ -212,24 +212,89 @@ GetConfigDir() {
 
 StartConfigWatcher(path, interval_ms := 1000) {
     global config_watch_mtime := ""
+    global config_watch_handle := 0
+    global config_watch_dir := ""
+    global config_watch_path := path
+    global config_watch_use_fallback := false
+    global config_watch_fallback_notified := false
+
     if FileExist(path)
         config_watch_mtime := FileGetTime(path, "M")
 
-    SetTimer((*) => CheckConfigWatcher(path), interval_ms)
+    try {
+        SplitPath(path, &config_watch_filename, &config_watch_dir)
+        flags := 0x00000010 | 0x00000001
+        config_watch_handle := DllCall("FindFirstChangeNotificationW", "str", config_watch_dir, "int", false, "uint", flags, "ptr")
+        if (!config_watch_handle || config_watch_handle = -1)
+            throw Error("FindFirstChangeNotificationW failed")
+    } catch {
+        config_watch_use_fallback := true
+        NotifyConfigWatcherFallback()
+    }
+
+    SetTimer((*) => CheckConfigWatcher(), interval_ms)
 }
 
-CheckConfigWatcher(path) {
-    global config_watch_mtime
-    if !FileExist(path)
+CheckConfigWatcher() {
+    global config_watch_mtime, config_watch_handle, config_watch_path, config_watch_use_fallback
+    if config_watch_use_fallback {
+        CheckConfigWatcherPoll()
+        return
+    }
+
+    if (!config_watch_handle || config_watch_handle = -1) {
+        config_watch_use_fallback := true
+        NotifyConfigWatcherFallback()
+        CheckConfigWatcherPoll()
+        return
+    }
+
+    result := DllCall("WaitForSingleObject", "ptr", config_watch_handle, "uint", 0)
+    if (result != 0)
         return
 
-    current := FileGetTime(path, "M")
+    if !FileExist(config_watch_path) {
+        DllCall("FindNextChangeNotification", "ptr", config_watch_handle)
+        return
+    }
+
+    current := FileGetTime(config_watch_path, "M")
+    if (config_watch_mtime = "") {
+        config_watch_mtime := current
+    } else if (current != config_watch_mtime) {
+        config_watch_mtime := current
+        Reload()
+        return
+    }
+
+    if !DllCall("FindNextChangeNotification", "ptr", config_watch_handle) {
+        config_watch_use_fallback := true
+        NotifyConfigWatcherFallback()
+    }
+}
+
+CheckConfigWatcherPoll() {
+    global config_watch_mtime, config_watch_path
+    if !FileExist(config_watch_path)
+        return
+
+    current := FileGetTime(config_watch_path, "M")
     if (config_watch_mtime = "") {
         config_watch_mtime := current
         return
     }
-    if (current != config_watch_mtime)
+    if (current != config_watch_mtime) {
+        config_watch_mtime := current
         Reload()
+    }
+}
+
+NotifyConfigWatcherFallback() {
+    global config_watch_fallback_notified
+    if config_watch_fallback_notified
+        return
+    config_watch_fallback_notified := true
+    TrayTip("harken", "Config watcher fell back to polling.", 5)
 }
 
 ActivateReloadMode(timeout_ms := 1500) {
