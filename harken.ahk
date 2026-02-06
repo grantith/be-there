@@ -5,6 +5,7 @@
 #Include src/lib/toml.ahk
 #Include src/lib/config_loader.ahk
 #Include src/lib/state_store.ahk
+#Include src/lib/virtual_desktop.ahk
 #Include src/lib/focus_or_run.ahk
 #Include src/lib/command_toast.ahk
 #Include src/lib/window_inspector.ahk
@@ -20,6 +21,7 @@ if (config_errors.Length) {
     LogConfigErrors(config_errors, config_dir "\config.errors.log", config_path)
     return
 }
+InitVirtualDesktop()
 global AppState := LoadState()
 InitCommandToast()
 
@@ -103,6 +105,7 @@ DefaultConfig() {
                 "cancel_key", "Esc"
             ),
             "cycle_app_windows_hotkey", "c",
+            "cycle_app_windows_current_hotkey", "+c",
             "center_width_cycle_hotkey", "Space",
             "minimize_others_hotkey", ""
         ),
@@ -126,6 +129,12 @@ DefaultConfig() {
             ),
             "gap_px", 0,
             "exceptions_regex", "(Shell_TrayWnd|Shell_SecondaryTrayWnd|WorkerW|XamlExplorerHostIslandWindow)"
+        ),
+        "virtual_desktop", Map(
+            "enabled", true,
+            "switch_on_focus", true,
+            "ensure_count", 0,
+            "cycle_prefer_current", true
         ),
         "directional_focus", Map(
             "enabled", true,

@@ -610,6 +610,9 @@ IsCandidateInCenterBand(win, center_band) {
 ActivateWindow(hwnd) {
     if !hwnd
         return 0
+    if VirtualDesktopSwitchOnFocus()
+        return ActivateWindowAcrossDesktops(hwnd)
+
     WinActivate("ahk_id " hwnd)
     try WinWaitActive("ahk_id " hwnd,, 0.2)
     active_hwnd := WinGetID("A")

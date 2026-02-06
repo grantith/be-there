@@ -7,6 +7,7 @@ move_mode_enabled := Config["window"]["move_mode"]["enable"]
 move_mode_cancel_key := Config["window"]["move_mode"]["cancel_key"]
 center_cycle_hotkey := Config["window"]["center_width_cycle_hotkey"]
 cycle_app_windows_hotkey := Config["window"]["cycle_app_windows_hotkey"]
+cycle_app_windows_current_hotkey := Config["window"]["cycle_app_windows_current_hotkey"]
 minimize_others_hotkey := ""
 if Config["window"].Has("minimize_others_hotkey")
     minimize_others_hotkey := Config["window"]["minimize_others_hotkey"]
@@ -129,19 +130,55 @@ SortWindowList(list) {
 FilterWindowList(exe, list) {
     filtered := []
     for _, id in list {
-        class_name := WinGetClass("ahk_id " id)
+        if !WinExist("ahk_id " id)
+            continue
+        try class_name := WinGetClass("ahk_id " id)
+        catch
+            continue
         if (exe = "explorer.exe") {
             if (class_name = "Progman" || class_name = "WorkerW" || class_name = "Shell_TrayWnd")
                 continue
         }
-        ex_style := WinGetExStyle("ahk_id " id)
+        try ex_style := WinGetExStyle("ahk_id " id)
+        catch
+            continue
         if (ex_style & 0x80) || (ex_style & 0x8000000)
             continue
-        if (!(WinGetStyle("ahk_id " id) & 0x10000000))
+        try style := WinGetStyle("ahk_id " id)
+        catch
+            continue
+        if (!(style & 0x10000000))
             continue
         filtered.Push(id)
     }
     return filtered
+}
+
+ApplyDesktopCyclePreference(list, current_only := false) {
+    if !VirtualDesktopEnabled()
+        return list
+
+    current := []
+    other := []
+    for _, id in list {
+        if IsWindowOnCurrentDesktop(id)
+            current.Push(id)
+        else if !current_only
+            other.Push(id)
+    }
+
+    if current_only
+        return current
+
+    if !Config["virtual_desktop"]["cycle_prefer_current"]
+        return list
+
+    ordered := []
+    for _, id in current
+        ordered.Push(id)
+    for _, id in other
+        ordered.Push(id)
+    return ordered
 }
 
 HandleSuperTap() {
@@ -283,12 +320,15 @@ CycleAppWindows(*) {
     if !exe
         return
 
-    win_list := WinGetList("ahk_exe " exe)
+    win_list := GetWindowsAcrossDesktops("ahk_exe " exe)
     win_list := FilterWindowList(exe, win_list)
     if (win_list.Length < 2)
         return
 
     win_list := SortWindowList(win_list)
+    win_list := ApplyDesktopCyclePreference(win_list, false)
+    if (win_list.Length < 2)
+        return
 
     current_index := 0
     for i, id in win_list {
@@ -299,7 +339,38 @@ CycleAppWindows(*) {
     }
 
     next_index := (current_index >= win_list.Length || current_index = 0) ? 1 : current_index + 1
-    WinActivate "ahk_id " win_list[next_index]
+    ActivateWindowAcrossDesktops(win_list[next_index])
+}
+
+CycleAppWindowsCurrent(*) {
+    hwnd := WinExist("A")
+    if !hwnd
+        return
+
+    exe := WinGetProcessName("ahk_id " hwnd)
+    if !exe
+        return
+
+    win_list := GetWindowsAcrossDesktops("ahk_exe " exe)
+    win_list := FilterWindowList(exe, win_list)
+    if (win_list.Length < 2)
+        return
+
+    win_list := SortWindowList(win_list)
+    win_list := ApplyDesktopCyclePreference(win_list, true)
+    if (win_list.Length < 2)
+        return
+
+    current_index := 0
+    for i, id in win_list {
+        if (id = hwnd) {
+            current_index := i
+            break
+        }
+    }
+
+    next_index := (current_index >= win_list.Length || current_index = 0) ? 1 : current_index + 1
+    ActivateWindowAcrossDesktops(win_list[next_index])
 }
 
 HotIf IsSuperKeyPressed
@@ -319,6 +390,8 @@ Hotkey("^k", (*) => MoveActiveWindow(0, -move_step))
 Hotkey("m", ToggleMaximize)
 Hotkey("q", CloseWindow)
 Hotkey(cycle_app_windows_hotkey, CycleAppWindows)
+if (cycle_app_windows_current_hotkey != "")
+    Hotkey(cycle_app_windows_current_hotkey, CycleAppWindowsCurrent)
 if (minimize_others_hotkey != "")
     Hotkey(minimize_others_hotkey, MinimizeOtherWindows)
 HotIf

@@ -274,6 +274,8 @@ BuildCommandToastRows(key_width := 16) {
     rows.Push(Map("key", "alt+-", "desc", "minimize"))
     rows.Push(Map("key", "super+q", "desc", "close"))
     rows.Push(Map("key", "super+" Config["window"]["cycle_app_windows_hotkey"], "desc", "cycle app windows"))
+    if (Config["window"]["cycle_app_windows_current_hotkey"] != "")
+        rows.Push(Map("key", "super+" Config["window"]["cycle_app_windows_current_hotkey"], "desc", "cycle app windows (current desktop)"))
     if Config.Has("window_selector") && Config["window_selector"]["enabled"] {
         rows.Push(Map("key", "super+" Config["window_selector"]["hotkey"], "desc", "window selector"))
     }

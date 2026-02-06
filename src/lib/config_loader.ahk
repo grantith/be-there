@@ -45,6 +45,8 @@ ConfigSchema() {
             "run", OptionalSpec("string"),
             "run_start_in", OptionalSpec("string"),
             "run_paths", OptionalSpec(["string"]),
+            "desktop", OptionalSpec("number"),
+            "follow_on_spawn", OptionalSpec("bool"),
             "focus_border", OptionalSpec(Map(
                 "border_color", OptionalSpec("string"),
                 "move_mode_color", OptionalSpec("string"),
@@ -69,6 +71,7 @@ ConfigSchema() {
                 "cancel_key", "string"
             ),
             "cycle_app_windows_hotkey", "string",
+            "cycle_app_windows_current_hotkey", "string",
             "center_width_cycle_hotkey", "string",
             "minimize_others_hotkey", OptionalSpec("string")
         ),
@@ -92,6 +95,12 @@ ConfigSchema() {
             ),
             "gap_px", "number",
             "exceptions_regex", "string"
+        ),
+        "virtual_desktop", Map(
+            "enabled", "bool",
+            "switch_on_focus", "bool",
+            "ensure_count", "number",
+            "cycle_prefer_current", "bool"
         ),
         "directional_focus", Map(
             "enabled", "bool",

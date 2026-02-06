@@ -12,6 +12,7 @@ class WindowWalker
     static visible := false
     static image_list := ""
     static icon_cache := Map()
+    static corner_radius := 8
 
     static Show(*)
     {
@@ -47,19 +48,20 @@ class WindowWalker
         if WindowWalker.gui
             return
 
-        WindowWalker.gui := Gui("+AlwaysOnTop +ToolWindow -Caption +Border", "harken Window Selector")
+        WindowWalker.gui := Gui("+AlwaysOnTop +ToolWindow -Caption", "harken Window Selector")
         WindowWalker.gui.MarginX := 12
         WindowWalker.gui.MarginY := 10
         WindowWalker.gui.SetFont("s10", "Segoe UI")
 
-        WindowWalker.search_edit := WindowWalker.gui.AddEdit("w560", "")
+        WindowWalker.search_edit := WindowWalker.gui.AddEdit("w600", "")
         WindowWalker.search_edit.OnEvent("Change", (*) => WindowWalker.ApplyFilter())
 
-        WindowWalker.list_view := WindowWalker.gui.AddListView("w560 r10 -Multi", ["App", "Title"])
+        WindowWalker.list_view := WindowWalker.gui.AddListView("w600 r10 -Multi", ["App", "Title", "Desk"])
         WindowWalker.image_list := IL_Create(20)
         WindowWalker.list_view.SetImageList(WindowWalker.image_list, 1)
-        WindowWalker.list_view.ModifyCol(1, 160)
-        WindowWalker.list_view.ModifyCol(2, 380)
+        WindowWalker.list_view.ModifyCol(1, 150)
+        WindowWalker.list_view.ModifyCol(2, 360)
+        WindowWalker.list_view.ModifyCol(3, 60)
         WindowWalker.list_view.OnEvent("DoubleClick", (*) => WindowWalker.ActivateSelected())
 
         WindowWalker.gui.OnEvent("Close", (*) => WindowWalker.Hide())
@@ -74,6 +76,20 @@ class WindowWalker
         pos_x := left + (right - left - w) / 2
         pos_y := top + (bottom - top - h) / 2
         WindowWalker.gui.Show("x" pos_x " y" pos_y)
+        WindowWalker.ApplyRoundedCorners(w, h)
+    }
+
+    static ApplyRoundedCorners(width := 0, height := 0)
+    {
+        if !WindowWalker.gui
+            return
+        if (!width || !height) {
+            WindowWalker.gui.GetPos(,, &width, &height)
+        }
+        if (width <= 0 || height <= 0)
+            return
+        radius := WindowWalker.corner_radius
+        try WinSetRegion("0-0 w" width " h" height " r" radius "-" radius, WindowWalker.gui)
     }
 
     static StartFocusWatch()
@@ -163,7 +179,7 @@ class WindowWalker
         if WinExist("ahk_id " hwnd) {
             if (WinGetMinMax("ahk_id " hwnd) = -1)
                 WinRestore "ahk_id " hwnd
-            WinActivate "ahk_id " hwnd
+            ActivateWindowAcrossDesktops(hwnd)
         }
     }
 
@@ -188,12 +204,14 @@ class WindowWalker
                 exe := "unknown"
             exe_path := ""
             try exe_path := WinGetProcessPath("ahk_id " hwnd)
+            desktop_label := WindowWalker.DesktopLabel(hwnd)
 
             WindowWalker.windows.Push(Map(
                 "hwnd", hwnd,
                 "title", title,
                 "exe", exe,
                 "exe_path", exe_path,
+                "desktop", desktop_label,
                 "order", A_Index
             ))
         }
@@ -224,7 +242,8 @@ class WindowWalker
                 "exe_display", WindowWalker.DisplayExe(win["exe"]),
                 "exe_path", win["exe_path"],
                 "title", win["title"],
-                "title_preview", WindowWalker.TruncateText(win["title"], preview_len)
+                "title_preview", WindowWalker.TruncateText(win["title"], preview_len),
+                "desktop", win["desktop"]
             ))
         }
 
@@ -239,7 +258,7 @@ class WindowWalker
 
         for _, item in matches {
             icon_index := WindowWalker.GetIconIndex(item["exe"], item["exe_path"])
-            WindowWalker.list_view.Add("Icon" icon_index, item["exe_display"], item["title_preview"])
+            WindowWalker.list_view.Add("Icon" icon_index, item["exe_display"], item["title_preview"], item["desktop"])
         }
 
         if (WindowWalker.list_view.GetCount() > 0)
@@ -261,19 +280,38 @@ class WindowWalker
 
     static IsWindowEligible(hwnd)
     {
+        if !WinExist("ahk_id " hwnd)
+            return false
         if Window.IsException("ahk_id " hwnd)
             return false
 
         if (!Config["window_selector"]["include_minimized"] && WinGetMinMax("ahk_id " hwnd) = -1)
             return false
 
-        ex_style := WinGetExStyle("ahk_id " hwnd)
+        try ex_style := WinGetExStyle("ahk_id " hwnd)
+        catch
+            return false
         if (ex_style & 0x80) || (ex_style & 0x8000000)
             return false
-        if !(WinGetStyle("ahk_id " hwnd) & 0x10000000)
+        try style := WinGetStyle("ahk_id " hwnd)
+        catch
+            return false
+        if !(style & 0x10000000)
             return false
 
         return true
+    }
+
+    static DesktopLabel(hwnd)
+    {
+        if !VirtualDesktopEnabled()
+            return ""
+        desktop_num := GetWindowDesktopNum(hwnd)
+        if (desktop_num = -1 || desktop_num = -2)
+            return "all"
+        if (desktop_num <= 0)
+            return ""
+        return desktop_num
     }
 
     static SortMatches(matches)

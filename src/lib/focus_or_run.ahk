@@ -8,44 +8,25 @@ FocusOrRun(winTitle, exePath, hotkey_id, app_config := "", *) {
     current_hwnd := WinGetID("A")
 
     if (hwnds.Length) {
-        for hwnd in hwnds {
-            if (InStr(winTitle, "explorer.exe")) {
-                class_name := WinGetClass("ahk_id " hwnd)
-                if (class_name = "Progman" || class_name = "WorkerW" || class_name = "Shell_TrayWnd")
-                    continue
-            }
-            ex_style := WinGetExStyle("ahk_id " hwnd)
-            if (ex_style & 0x80) || (ex_style & 0x8000000)
-                continue
-            if (!(WinGetStyle("ahk_id " hwnd) & 0x10000000))
-                continue
-
-            state := WinGetMinMax("ahk_id " hwnd)
-            if (state = -1) {
-                if (!target_hwnd)
-                    target_hwnd := hwnd
-                continue
-            }
-            target_hwnd := hwnd
-            break
-        }
+        target_hwnd := PickFocusableAppWindow(hwnds, winTitle)
         if (!target_hwnd)
             target_hwnd := hwnds[1]
     }
 
     if target_hwnd {
         if (current_hwnd = target_hwnd) {
-            if last_window.Has(hotkey_id) && WinExist("ahk_id " last_window[hotkey_id]) {
-                WinActivate "ahk_id " last_window[hotkey_id]
+            if last_window.Has(hotkey_id) && WindowExistsAcrossDesktops(last_window[hotkey_id]) {
+                ActivateWindowAcrossDesktops(last_window[hotkey_id])
             }
             return
         }
         if current_hwnd && (current_hwnd != target_hwnd) {
             last_window[hotkey_id] := current_hwnd
         }
-        WinActivate "ahk_id " target_hwnd
+        ActivateWindowAcrossDesktops(target_hwnd)
     } else {
         RunResolved(exePath, app_config)
+        ScheduleMoveAppWindowToDesktop(winTitle, app_config)
     }
 }
 
@@ -55,16 +36,97 @@ GetAppWindowList(win_title, app_config := "") {
     }
     if !win_title
         return []
-    return WinGetList(win_title)
+    return GetWindowsAcrossDesktops(win_title)
 }
 
 GetWindowsByMatch(match) {
     matches := []
-    for _, hwnd in WinGetList() {
+    for _, hwnd in GetWindowsAcrossDesktops() {
         if MatchWindowFields(match, hwnd)
             matches.Push(hwnd)
     }
     return matches
+}
+
+PickFocusableAppWindow(hwnds, win_title) {
+    for hwnd in hwnds {
+        if !WinExist("ahk_id " hwnd)
+            continue
+        if (InStr(win_title, "explorer.exe")) {
+            class_name := WinGetClass("ahk_id " hwnd)
+            if (class_name = "Progman" || class_name = "WorkerW" || class_name = "Shell_TrayWnd")
+                continue
+        }
+        try ex_style := WinGetExStyle("ahk_id " hwnd)
+        catch
+            continue
+        if (ex_style & 0x80) || (ex_style & 0x8000000)
+            continue
+        try style := WinGetStyle("ahk_id " hwnd)
+        catch
+            continue
+        if (!(style & 0x10000000))
+            continue
+
+        state := WinGetMinMax("ahk_id " hwnd)
+        if (state = -1)
+            continue
+        return hwnd
+    }
+
+    for hwnd in hwnds {
+        if !WinExist("ahk_id " hwnd)
+            continue
+        state := WinGetMinMax("ahk_id " hwnd)
+        if (state = -1)
+            return hwnd
+    }
+    return 0
+}
+
+ScheduleMoveAppWindowToDesktop(win_title, app_config := "") {
+    if !VirtualDesktopEnabled()
+        return
+    target_desktop := GetAppTargetDesktop(app_config)
+    if (target_desktop <= 0)
+        return
+
+    follow_on_spawn := GetAppFollowOnSpawn(app_config)
+    attempts := 0
+    callback := 0
+    callback := () => TryMoveAppWindowToDesktop(win_title, app_config, target_desktop, follow_on_spawn, &attempts, callback)
+    SetTimer(callback, 200)
+}
+
+GetAppTargetDesktop(app_config := "") {
+    if !(app_config is Map)
+        return 0
+    if !app_config.Has("desktop")
+        return 0
+    return app_config["desktop"]
+}
+
+GetAppFollowOnSpawn(app_config := "") {
+    if (app_config is Map && app_config.Has("follow_on_spawn"))
+        return app_config["follow_on_spawn"]
+    return true
+}
+
+TryMoveAppWindowToDesktop(win_title, app_config, target_desktop, follow_on_spawn, &attempts, callback) {
+    attempts += 1
+    hwnds := GetAppWindowList(win_title, app_config)
+    hwnd := PickFocusableAppWindow(hwnds, win_title)
+    if (!hwnd && hwnds.Length)
+        hwnd := hwnds[1]
+
+    if (hwnd) {
+        VD.MoveWindowToDesktopNum("ahk_id " hwnd, target_desktop, follow_on_spawn)
+        SetTimer(callback, 0)
+        return
+    }
+
+    if (attempts >= 30)
+        SetTimer(callback, 0)
 }
 
 RunResolved(command, app_config := "") {

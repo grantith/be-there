@@ -52,6 +52,7 @@ Use the "window switcher" (like powertoys window walker) with `super + w`.
 Other
 - `super + alt` sends `ctrl + tab` (configurable via `global_hotkeys`)
 - `super + c` cycle through windows of the same app
+- `super + shift + c` cycle through windows of the same app on the current desktop
 - `super + w` open Window Selector (fuzzy find open windows)
 - `alt + h/l` move window focus left/right
 - `alt + j/k` move window focus down/up (non-stacked)
@@ -82,11 +83,15 @@ Enter Command Mode with `super + ;`.
 - `apps[].run_start_in`: optional working directory for launching the app.
 - `apps[].match`: optional match map with `exe`, `class`, `title`, and `*_regex` flags (exact match is case-insensitive by default; regex is also case-insensitive).
 - `apps[].focus_border`: optional per-app focus border overrides (colors, thickness, and corner radius).
+- `apps[].desktop`: optional virtual desktop number to move new windows to.
+- `apps[].follow_on_spawn`: optional override for whether to switch to the app's desktop after launching (default true).
 - `global_hotkeys`: array of scoped hotkey bindings (set `target_exes` empty for global use).
 - `window`: resize/move steps and hotkeys (including move mode).
 - `window.minimize_others_hotkey`: optional hotkey to minimize all other windows on the current monitor.
+- `window.cycle_app_windows_current_hotkey`: hotkey to cycle app windows on the current desktop only.
 - `window_selector`: Window Selector settings (hotkey, match fields, display limits).
 - `window_manager`: grid size, margins, gaps, and ignored window classes.
+- `virtual_desktop`: cross-desktop focus/cycle settings and desktop auto-creation.
 - `directional_focus`: directional focus settings (stacked threshold, stack tolerance, topmost preference, last-stacked preference, frontmost guard, perpendicular overlap min, cross-monitor, debug).
 - `focus_border`: overlay appearance and update interval (including command mode color).
 - `helper`: command overlay settings.
@@ -112,6 +117,7 @@ Enter Command Mode with `super + ;`.
 
 ## Known Limitations
 - This has not been tested with multi-monitor setups or much outside of ultra-wide monitors.
+- Virtual desktop integration requires AutoHotkey v2.1 alpha or later.
 - Some apps (e.g., Discord) launch via `Update.exe` and keep versioned subfolders, which makes auto-resolution unreliable for launching or focusing more challenging.
 - For some apps that minimize or close to the system tray, it's recommended you disable that in the program. Otherwise you can try to set `apps[].run` to a stable full path (or use `run_paths`) in your config.
 - Windows with elevated permissions may ignore Harken hotkeys unless Harken is run as Administrator.

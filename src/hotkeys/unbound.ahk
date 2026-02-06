@@ -5,6 +5,7 @@ RegisterUnboundHotkeys() {
 
     AddUsedKey(used_keys, Config["window"]["center_width_cycle_hotkey"])
     AddUsedKey(used_keys, Config["window"]["cycle_app_windows_hotkey"])
+    AddUsedKey(used_keys, Config["window"]["cycle_app_windows_current_hotkey"])
     AddUsedKey(used_keys, "m")
     AddUsedKey(used_keys, "q")
     AddUsedKey(used_keys, "h")
