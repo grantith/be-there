@@ -20,6 +20,7 @@ id = "editor"
 hotkey = "v"
 win_title = "ahk_exe Code.exe"
 run = "code"
+# run_start_in = "C:\\projects"
 run_paths = []
 
 [[apps]]

@@ -56,6 +56,7 @@ Other
 - `alt + h/l` move window focus left/right
 - `alt + j/k` move window focus down/up (non-stacked)
 - `alt + [` / `alt + ]` move window focus forward/back through stacked windows
+- Custom border params per exe/title/class. For example, color certain vscode project windows with different colors/thickness.
 
 Enter Command Mode with `super + ;`.
 - `r` to reload program/config
@@ -78,6 +79,7 @@ Enter Command Mode with `super + ;`.
 - `super_key`: key or list of keys used as the super modifier (e.g., `CapsLock` or `["F24", "CapsLock"]`).
 - `apps`: list of app bindings with `hotkey`, `win_title`/`match`, and `run` command. Omit `hotkey` for matcher-only entries (they won't appear in the Command Overlay).
 - `apps[].run_paths`: optional list of directories to search for the executable.
+- `apps[].run_start_in`: optional working directory for launching the app.
 - `apps[].match`: optional match map with `exe`, `class`, `title`, and `*_regex` flags (exact match is case-insensitive by default; regex is also case-insensitive).
 - `apps[].focus_border`: optional per-app focus border overrides (colors, thickness, and corner radius).
 - `global_hotkeys`: array of scoped hotkey bindings (set `target_exes` empty for global use).

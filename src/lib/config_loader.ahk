@@ -43,6 +43,7 @@ ConfigSchema() {
                 "title_regex", OptionalSpec("bool")
             )),
             "run", OptionalSpec("string"),
+            "run_start_in", OptionalSpec("string"),
             "run_paths", OptionalSpec(["string"]),
             "focus_border", OptionalSpec(Map(
                 "border_color", OptionalSpec("string"),

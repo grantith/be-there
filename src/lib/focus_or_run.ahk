@@ -69,8 +69,25 @@ GetWindowsByMatch(match) {
 
 RunResolved(command, app_config := "") {
     resolved := ResolveRunPath(command, app_config)
+    run_start_in := ""
+    if (app_config is Map && app_config.Has("run_start_in"))
+        run_start_in := app_config["run_start_in"]
     try {
-        Run resolved
+        if (run_start_in = "") {
+            link_info := ResolveShortcutStartIn(resolved)
+            if (link_info is Map) {
+                resolved := link_info["target"]
+                run_start_in := link_info["start_in"]
+            }
+        } else if (StrLower(SubStr(resolved, -4)) = ".lnk") {
+            shortcut := ResolveShortcutTarget(resolved)
+            if shortcut
+                resolved := shortcut
+        }
+        if (run_start_in != "")
+            Run resolved, run_start_in
+        else
+            Run resolved
     } catch as err {
         MsgBox(
             "Failed to launch: " command "`n" err.Message "`n`n" .
@@ -85,6 +102,9 @@ ResolveRunPath(command, app_config := "") {
     command := Trim(command, " `t")
     if (SubStr(command, 1, 1) = '"' && SubStr(command, -1) = '"')
         command := SubStr(command, 2, -1)
+    if (StrLower(SubStr(command, -4)) = ".lnk") {
+        return command
+    }
     if (InStr(command, "\\") || InStr(command, "/") || InStr(command, ":")) {
         if FileExist(command)
             return command
@@ -217,28 +237,45 @@ FindStartMenuShortcut(command) {
                 if !target
                     continue
                 if InStr(StrLower(target), name)
-                    return target
+                    return A_LoopFilePath
                 continue
             }
             target := ResolveShortcutTarget(A_LoopFilePath)
             if target
-                return target
+                return A_LoopFilePath
         }
     }
     return ""
 }
 
 ResolveShortcutTarget(link_path) {
-    if !FileExist(link_path)
+    if !link_path || !FileExist(link_path)
         return ""
     try {
         shell := ComObject("WScript.Shell")
         shortcut := shell.CreateShortcut(link_path)
-        target := shortcut.TargetPath
-        if target && FileExist(target)
-            return target
+        target := Trim(shortcut.TargetPath " " shortcut.Arguments)
+        return target
+    } catch {
+        return ""
     }
-    return ""
+}
+
+ResolveShortcutStartIn(link_path) {
+    if !link_path || !FileExist(link_path)
+        return ""
+    if (StrLower(SubStr(link_path, -4)) != ".lnk")
+        return ""
+    try {
+        shell := ComObject("WScript.Shell")
+        shortcut := shell.CreateShortcut(link_path)
+        return Map(
+            "target", Trim(shortcut.TargetPath " " shortcut.Arguments),
+            "start_in", shortcut.WorkingDirectory
+        )
+    } catch {
+        return ""
+    }
 }
 
 FindWindowsAppsAlias(exe_name) {
