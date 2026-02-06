@@ -1,5 +1,5 @@
 config_version = 1
-super_key = "CapsLock"
+super_key = ["F24", "CapsLock"]
 
 [[apps]]
 id = "browser"

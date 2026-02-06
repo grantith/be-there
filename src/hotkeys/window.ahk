@@ -1,4 +1,4 @@
-global Config, super_key
+global Config
 
 resize_step := Config["window"]["resize_step"]
 move_step := Config["window"]["move_step"]
@@ -176,7 +176,7 @@ OnSuperKeyUp() {
 }
 
 if (move_mode_enabled || Config["reload"]["mode_enabled"] || Config["helper"]["enabled"]) {
-    Hotkey(super_key " up", (*) => OnSuperKeyUp())
+    RegisterSuperKeyHotkey("", " up", (*) => OnSuperKeyUp())
 }
 
 CenterWidthCycle(*) {
@@ -296,7 +296,7 @@ CycleAppWindows(*) {
     WinActivate "ahk_id " win_list[next_index]
 }
 
-HotIf (*) => GetKeyState(super_key, "P")
+HotIf IsSuperKeyPressed
 Hotkey(center_cycle_hotkey, CenterWidthCycle)
 Hotkey("Left", (*) => ResizeActiveWindow(-resize_step, 0))
 Hotkey("Right", (*) => ResizeActiveWindow(resize_step, 0))

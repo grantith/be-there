@@ -1,4 +1,4 @@
-global Config, super_key
+global Config
 
 for _, hotkey_config in Config["global_hotkeys"] {
     if !hotkey_config["enabled"]
@@ -10,10 +10,10 @@ for _, hotkey_config in Config["global_hotkeys"] {
 
     if (target_exes.Length > 0) {
         HotIf (*) => ScopedHotIf(target_exes)
-        Hotkey(super_key " & " hotkey_name, (*) => Send(send_keys))
+        RegisterSuperComboHotkey(hotkey_name, (*) => Send(send_keys))
         HotIf
     } else {
-        Hotkey(super_key " & " hotkey_name, (*) => Send(send_keys))
+        RegisterSuperComboHotkey(hotkey_name, (*) => Send(send_keys))
     }
 }
 

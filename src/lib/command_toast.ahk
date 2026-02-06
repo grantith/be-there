@@ -20,13 +20,13 @@ InitCommandToast() {
 }
 
 UpdateCommandToastVisibility() {
-    global command_helper_enabled, super_key
+    global command_helper_enabled
     if !command_helper_enabled {
         HideCommandToast()
         return
     }
 
-    if GetKeyState(super_key, "P") || ReloadModeActive() || Window.IsMoveMode() {
+    if IsSuperKeyPressed() || ReloadModeActive() || Window.IsMoveMode() {
         ShowCommandToast()
     } else {
         HideCommandToast()

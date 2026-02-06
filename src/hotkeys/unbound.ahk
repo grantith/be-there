@@ -1,4 +1,4 @@
-global Config, super_key
+global Config
 
 RegisterUnboundHotkeys() {
     used_keys := Map()
@@ -39,7 +39,7 @@ RegisterUnboundHotkeys() {
     }
 
     candidates := BuildUnboundCandidateKeys()
-    HotIf (*) => GetKeyState(super_key, "P")
+    HotIf IsSuperKeyPressed
     for _, key in candidates {
         if !used_keys.Has(StrLower(key))
             Hotkey(key, (*) => FlashUnboundHotkey())
