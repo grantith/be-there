@@ -13,6 +13,18 @@ class WindowWalker
     static image_list := ""
     static icon_cache := Map()
     static corner_radius := 8
+    static excluded_exes := Map(
+        "applicationframehost", true,
+        "lockapp", true,
+        "searchexperiencehost", true,
+        "searchhost", true,
+        "searchapp", true,
+        "searchui", true,
+        "shellexperiencehost", true,
+        "startmenuexperiencehost", true,
+        "systemsettings", true,
+        "textinputhost", true
+    )
 
     static Show(*)
     {
@@ -27,6 +39,15 @@ class WindowWalker
         WindowWalker.visible := true
         WindowWalker.search_edit.Focus()
         WindowWalker.StartFocusWatch()
+    }
+
+    static Toggle(*)
+    {
+        if WindowWalker.IsActive() {
+            WindowWalker.Hide()
+            return
+        }
+        WindowWalker.Show()
     }
 
     static Hide(*)
@@ -176,9 +197,11 @@ class WindowWalker
             return
 
         WindowWalker.Hide()
-        if WinExist("ahk_id " hwnd) {
-            if (WinGetMinMax("ahk_id " hwnd) = -1)
-                WinRestore "ahk_id " hwnd
+        if WindowExistsAcrossDesktops(hwnd) {
+            try {
+                if (WinGetMinMax("ahk_id " hwnd) = -1)
+                    WinRestore "ahk_id " hwnd
+            }
             ActivateWindowAcrossDesktops(hwnd)
         }
     }
@@ -186,7 +209,9 @@ class WindowWalker
     static RefreshWindows()
     {
         WindowWalker.windows := []
-        win_list := WinGetList()
+        win_list := GetWindowsAcrossDesktops()
+        bak_detect_hidden_windows := A_DetectHiddenWindows
+        A_DetectHiddenWindows := true
 
         for _, hwnd in win_list {
             if WindowWalker.gui && (hwnd = WindowWalker.gui.Hwnd)
@@ -215,6 +240,8 @@ class WindowWalker
                 "order", A_Index
             ))
         }
+
+        A_DetectHiddenWindows := bak_detect_hidden_windows
     }
 
     static ApplyFilter()
@@ -280,9 +307,18 @@ class WindowWalker
 
     static IsWindowEligible(hwnd)
     {
-        if !WinExist("ahk_id " hwnd)
+        if !WindowExistsAcrossDesktops(hwnd)
             return false
         if Window.IsException("ahk_id " hwnd)
+            return false
+
+        try exe_name := WinGetProcessName("ahk_id " hwnd)
+        catch
+            return false
+        exe_name := StrLower(exe_name)
+        if (SubStr(exe_name, -4) = ".exe")
+            exe_name := SubStr(exe_name, 1, -4)
+        if WindowWalker.excluded_exes.Has(exe_name)
             return false
 
         if (!Config["window_selector"]["include_minimized"] && WinGetMinMax("ahk_id " hwnd) = -1)
@@ -296,7 +332,13 @@ class WindowWalker
         try style := WinGetStyle("ahk_id " hwnd)
         catch
             return false
-        if !(style & 0x10000000)
+        allow_invisible := false
+        if VirtualDesktopEnabled() {
+            desktop_num := GetWindowDesktopNum(hwnd)
+            if (desktop_num > 0 && desktop_num != VD.getCurrentDesktopNum())
+                allow_invisible := true
+        }
+        if (!allow_invisible && !(style & 0x10000000))
             return false
 
         return true

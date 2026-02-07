@@ -48,6 +48,8 @@ class Window
         HotIf (*) => IsSuperKeyPressed()
             && !GetKeyState('Shift', 'P')
             && !GetKeyState('Ctrl', 'P')
+            && !GetKeyState('LAlt', 'P')
+            && !GetKeyState('RAlt', 'P')
             && !this.IsMoveMode()
         Hotkey('*k', ObjBindMethod(this, 'HotkeyCallback', ObjBindMethod(this, 'MoveUp')))
         Hotkey('*h', ObjBindMethod(this, 'HotkeyCallback', ObjBindMethod(this, 'MoveLeft')))

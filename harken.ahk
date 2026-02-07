@@ -18,7 +18,8 @@ config_result := LoadConfig(config_path, DefaultConfig())
 global Config := config_result["config"]
 config_errors := config_result["errors"]
 if (config_errors.Length) {
-    LogConfigErrors(config_errors, config_dir "\config.errors.log", config_path)
+    appdata_dir := GetAppDataDir()
+    LogConfigErrors(config_errors, appdata_dir "\config.errors.log", config_path)
     return
 }
 InitVirtualDesktop()
@@ -40,14 +41,6 @@ if reload_config["enabled"] {
     reload_mode_enabled := reload_config["mode_enabled"]
     reload_mode_timeout := reload_config["mode_timeout_ms"]
     global reload_mode_active := false
-
-    if reload_config["super_key_required"] {
-        HotIf IsSuperKeyPressed
-        Hotkey(reload_hotkey, (*) => Reload())
-        HotIf
-    } else {
-        Hotkey(reload_hotkey, (*) => Reload())
-    }
 
     if reload_mode_enabled {
         RegisterSuperComboHotkey(reload_mode_hotkey, (*) => ActivateReloadMode(reload_mode_timeout))
@@ -134,7 +127,15 @@ DefaultConfig() {
             "enabled", true,
             "switch_on_focus", true,
             "ensure_count", 0,
-            "cycle_prefer_current", true
+            "cycle_prefer_current", true,
+            "prev_hotkey", "h",
+            "next_hotkey", "l",
+            "move_prev_hotkey", "h",
+            "move_next_hotkey", "l",
+            "desktop_hotkeys", [],
+            "goto_hotkeys", [],
+            "move_hotkeys", [],
+            "debug_cycle", false
         ),
         "directional_focus", Map(
             "enabled", true,
@@ -174,7 +175,7 @@ DefaultConfig() {
 }
 
 LogConfigErrors(errors, log_path, config_path := "") {
-    DirCreate(GetConfigDir())
+    DirCreate(GetAppDataDir())
     header := "[" A_Now "] Config errors:" "`n"
     FileAppend(header, log_path)
     for _, err in errors {
@@ -219,6 +220,13 @@ GetConfigDir() {
     if !user_profile
         user_profile := A_ScriptDir
     return user_profile "\.config\harken"
+}
+
+GetAppDataDir() {
+    appdata := EnvGet("APPDATA")
+    if appdata
+        return appdata "\harken"
+    return GetConfigDir()
 }
 
 StartConfigWatcher(path, interval_ms := 1000) {
@@ -332,6 +340,14 @@ ExecuteCommand(callback) {
 }
 
 OnSuperKeyDown() {
+    if WindowWalker.IsActive() {
+        WindowWalker.Hide()
+        return
+    }
+    if command_toast_temp_visible {
+        HideCommandToast()
+        return
+    }
     UpdateCommandToastVisibility()
 }
 

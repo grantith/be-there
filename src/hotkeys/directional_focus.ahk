@@ -1,6 +1,7 @@
 global Config
 
 if Config.Has("directional_focus") && Config["directional_focus"]["enabled"] {
+    HotIf (*) => !IsSuperKeyPressed()
     Hotkey("!h", (*) => DirectionalFocus("left"))
     Hotkey("!l", (*) => DirectionalFocus("right"))
     Hotkey("!j", (*) => DirectionalFocus("down"))
@@ -9,4 +10,5 @@ if Config.Has("directional_focus") && Config["directional_focus"]["enabled"] {
     Hotkey("!]", (*) => DirectionalFocusStacked("next"))
     Hotkey("!+d", (*) => ToggleDirectionalFocusDebug())
     Hotkey("!+s", (*) => SetLastStackedFromActive())
+    HotIf
 }

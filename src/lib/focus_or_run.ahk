@@ -5,7 +5,10 @@ FocusOrRun(winTitle, exePath, hotkey_id, app_config := "", *) {
     static last_window := Map()
     target_hwnd := 0
     hwnds := GetAppWindowList(winTitle, app_config)
-    current_hwnd := WinGetID("A")
+    current_hwnd := 0
+    try current_hwnd := WinGetID("A")
+    catch
+        current_hwnd := 0
 
     if (hwnds.Length) {
         target_hwnd := PickFocusableAppWindow(hwnds, winTitle)
@@ -65,7 +68,15 @@ PickFocusableAppWindow(hwnds, win_title) {
         try style := WinGetStyle("ahk_id " hwnd)
         catch
             continue
-        if (!(style & 0x10000000))
+        allow_invisible := false
+        if VirtualDesktopEnabled() {
+            desktop_num := GetWindowDesktopNum(hwnd)
+            if (desktop_num <= 0)
+                allow_invisible := true
+            else if (desktop_num != VD.getCurrentDesktopNum())
+                allow_invisible := true
+        }
+        if (!allow_invisible && !(style & 0x10000000))
             continue
 
         state := WinGetMinMax("ahk_id " hwnd)
@@ -121,6 +132,15 @@ TryMoveAppWindowToDesktop(win_title, app_config, target_desktop, follow_on_spawn
 
     if (hwnd) {
         VD.MoveWindowToDesktopNum("ahk_id " hwnd, target_desktop, follow_on_spawn)
+        if follow_on_spawn {
+            VD.goToDesktopNum(target_desktop)
+            VD.WaitDesktopSwitched(target_desktop)
+        }
+        try {
+            assigned_desktop := GetWindowDesktopNum(hwnd)
+            if (assigned_desktop > 0 && assigned_desktop != target_desktop)
+                VD.MoveWindowToDesktopNum("ahk_id " hwnd, target_desktop, follow_on_spawn)
+        }
         SetTimer(callback, 0)
         return
     }

@@ -24,6 +24,28 @@ InitVirtualDesktop() {
         VD.createUntil(ensure_count)
 }
 
+RefreshVirtualDesktopState() {
+    if !VirtualDesktopEnabled()
+        return
+    try {
+        VD.IVirtualDesktopListChanged()
+        VD.currentDesktopNum := VD.IVirtualDesktopMap[VD.IVirtualDesktopManagerInternal.GetCurrentDesktop()]
+    }
+}
+
+GetCurrentDesktopNumFresh() {
+    if !VirtualDesktopEnabled()
+        return 0
+    try {
+        VD.IVirtualDesktopListChanged()
+        current := VD.IVirtualDesktopMap[VD.IVirtualDesktopManagerInternal.GetCurrentDesktop()]
+        if (current > 0)
+            VD.currentDesktopNum := current
+        return current
+    }
+    return 0
+}
+
 GetWindowDesktopNum(hwnd) {
     if !VirtualDesktopEnabled()
         return 0

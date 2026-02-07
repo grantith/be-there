@@ -102,6 +102,19 @@ enabled = true
 switch_on_focus = true
 ensure_count = 0
 cycle_prefer_current = true
+prev_hotkey = "h"
+next_hotkey = "l"
+move_prev_hotkey = "h"
+move_next_hotkey = "l"
+# debug_cycle = false
+# hotkey fields use AHK syntax without super (super is implied)
+# modifiers are applied by Harken (alt or alt+shift) for desktop actions
+
+[[virtual_desktop.1]]
+hotkey = "u"
+
+[[virtual_desktop.2]]
+hotkey = "i"
 
 [directional_focus]
 enabled = true

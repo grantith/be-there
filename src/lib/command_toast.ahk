@@ -11,6 +11,12 @@ global command_toast_icon_cache := Map()
 global command_toast_default_icon_index := 0
 global command_toast_last_mode := ""
 global command_toast_normal_refresh_pending := false
+global command_toast_visibility_timer := 0
+global command_toast_temp_visible := false
+global command_toast_input_hook := 0
+global command_toast_input_timer := 0
+global command_toast_keydown_enabled := false
+global command_toast_keydown_handler := 0
 
 InitCommandToast() {
     global Config, AppState, command_helper_enabled
@@ -20,22 +26,42 @@ InitCommandToast() {
 }
 
 UpdateCommandToastVisibility() {
-    global command_helper_enabled
-    if !command_helper_enabled {
+    global command_helper_enabled, command_toast_temp_visible
+    if !command_helper_enabled && !command_toast_temp_visible {
+        StopCommandToastVisibilityTimer()
         HideCommandToast()
         return
     }
 
-    if IsSuperKeyPressed() || ReloadModeActive() || Window.IsMoveMode() {
-        ShowCommandToast()
+    if ReloadModeActive() || Window.IsMoveMode() || command_toast_temp_visible {
+        ShowCommandToast(command_toast_temp_visible)
+        StartCommandToastVisibilityTimer()
     } else {
+        StopCommandToastVisibilityTimer()
         HideCommandToast()
     }
 }
 
-ShowCommandToast() {
+StartCommandToastVisibilityTimer() {
+    global command_toast_visibility_timer
+    if !command_toast_visibility_timer
+        command_toast_visibility_timer := CommandToastVisibilityTick
+    SetTimer(command_toast_visibility_timer, 200)
+}
+
+StopCommandToastVisibilityTimer() {
+    global command_toast_visibility_timer
+    if command_toast_visibility_timer
+        SetTimer(command_toast_visibility_timer, 0)
+}
+
+CommandToastVisibilityTick(*) {
+    UpdateCommandToastVisibility()
+}
+
+ShowCommandToast(force_show := false) {
     global command_helper_enabled, command_toast_gui, command_toast_visible, command_toast_view_key, command_toast_last_mode, command_toast_normal_refresh_pending
-    if !command_helper_enabled
+    if !command_helper_enabled && !force_show
         return
 
     model := BuildCommandToastModel()
@@ -76,14 +102,8 @@ ShowCommandToast() {
         margin := 16
     if (margin > 64)
         margin := 64
-    pos_x := right - w - margin
-    pos_y := bottom - h - margin
-    min_x := left + margin
-    max_x := right - w - margin
-    min_y := top + margin
-    max_y := bottom - h - margin
-    pos_x := Max(min_x, Min(pos_x, max_x))
-    pos_y := Max(min_y, Min(pos_y, max_y))
+    pos_x := left + (right - left - w) / 2
+    pos_y := top + (bottom - top - h) / 2
     command_toast_gui.Show("NoActivate x" pos_x " y" pos_y)
     if (model["mode"] = "normal" && command_toast_normal_refresh_pending) {
         RefreshCommandToastIcons(model)
@@ -172,11 +192,14 @@ RefreshCommandToastIcons(model) {
 }
 
 HideCommandToast() {
-    global command_toast_gui, command_toast_visible
+    global command_toast_gui, command_toast_visible, command_toast_temp_visible
     if command_toast_gui {
         command_toast_gui.Hide()
         command_toast_visible := false
     }
+    command_toast_temp_visible := false
+    StopCommandToastInputHook()
+    UnregisterCommandToastKeydown()
 }
 
 ToggleCommandHelper() {
@@ -190,6 +213,78 @@ ToggleCommandHelper() {
     TrayTip("", "")
     TrayTip("harken", "Command overlay " status, 2)
     UpdateCommandToastVisibility()
+}
+
+ShowCommandToastTemporary() {
+    global command_helper_enabled, command_toast_temp_visible
+    command_toast_temp_visible := true
+    ShowCommandToast(true)
+    StartCommandToastInputHook()
+    RegisterCommandToastKeydown()
+}
+
+StartCommandToastInputHook() {
+    global command_toast_input_timer
+    if ReloadModeActive() || Window.IsMoveMode()
+        return
+    StopCommandToastInputHook()
+    command_toast_input_timer := CommandToastStartInputHook
+    SetTimer(command_toast_input_timer, -100)
+}
+
+CommandToastStartInputHook(*) {
+    global command_toast_input_hook
+    if ReloadModeActive() || Window.IsMoveMode()
+        return
+    command_toast_input_hook := InputHook("V")
+    command_toast_input_hook.KeyOpt("{All}", "E")
+    command_toast_input_hook.OnKeyDown := CommandToastOnKeyDown
+    command_toast_input_hook.Start()
+}
+
+StopCommandToastInputHook() {
+    global command_toast_input_timer, command_toast_input_hook
+    if command_toast_input_timer
+        SetTimer(command_toast_input_timer, 0)
+    command_toast_input_timer := 0
+    if command_toast_input_hook {
+        try command_toast_input_hook.Stop()
+        command_toast_input_hook := 0
+    }
+}
+
+RegisterCommandToastKeydown() {
+    global command_toast_keydown_enabled, command_toast_keydown_handler
+    if command_toast_keydown_enabled
+        return
+    if !command_toast_keydown_handler
+        command_toast_keydown_handler := CommandToastKeydownHandler
+    OnMessage(0x100, command_toast_keydown_handler)
+    OnMessage(0x104, command_toast_keydown_handler)
+    command_toast_keydown_enabled := true
+}
+
+UnregisterCommandToastKeydown() {
+    global command_toast_keydown_enabled, command_toast_keydown_handler
+    if !command_toast_keydown_enabled
+        return
+    if command_toast_keydown_handler {
+        OnMessage(0x100, command_toast_keydown_handler, 0)
+        OnMessage(0x104, command_toast_keydown_handler, 0)
+    }
+    command_toast_keydown_enabled := false
+}
+
+CommandToastKeydownHandler(*) {
+    if ReloadModeActive() || Window.IsMoveMode()
+        return
+    HideCommandToast()
+}
+
+CommandToastOnKeyDown(*) {
+    if ReloadModeActive() || Window.IsMoveMode()
+        return
+    HideCommandToast()
 }
 
 GetCommandToastWorkArea(&left, &top, &right, &bottom) {

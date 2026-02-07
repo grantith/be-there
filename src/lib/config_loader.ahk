@@ -16,6 +16,7 @@ LoadConfig(config_path, default_config := Map()) {
     }
 
     NormalizeSuperKeyConfig(config)
+    NormalizeVirtualDesktopConfig(config)
     errors := ValidateConfig(config, ConfigSchema())
     ValidateSuperKeys(config, errors)
     ValidateApps(config, errors)
@@ -100,7 +101,24 @@ ConfigSchema() {
             "enabled", "bool",
             "switch_on_focus", "bool",
             "ensure_count", "number",
-            "cycle_prefer_current", "bool"
+            "cycle_prefer_current", "bool",
+            "prev_hotkey", "string",
+            "next_hotkey", "string",
+            "move_prev_hotkey", "string",
+            "move_next_hotkey", "string",
+            "desktop_hotkeys", OptionalSpec([Map(
+                "desktop", "number",
+                "hotkey", "string"
+            )]),
+            "goto_hotkeys", [Map(
+                "hotkey", "string",
+                "desktop", "number"
+            )],
+            "move_hotkeys", [Map(
+                "hotkey", "string",
+                "desktop", "number"
+            )],
+            "debug_cycle", "bool"
         ),
         "directional_focus", Map(
             "enabled", "bool",
@@ -152,6 +170,47 @@ NormalizeSuperKeyConfig(config) {
     super_value := config["super_key"]
     if (super_value is String)
         config["super_key"] := [super_value]
+}
+
+NormalizeVirtualDesktopConfig(config) {
+    if !config.Has("virtual_desktop") || !(config["virtual_desktop"] is Map)
+        return
+
+    vd_config := config["virtual_desktop"]
+    desktop_hotkeys := []
+    keys_to_remove := []
+
+    for key, val in vd_config {
+        if !IsInteger(key)
+            continue
+        keys_to_remove.Push(key)
+        desktop_num := Integer(key)
+        if (val is Array) {
+            for _, entry in val {
+                if !(entry is Map)
+                    continue
+                if entry.Has("hotkey") && entry["hotkey"] != "" {
+                    desktop_hotkeys.Push(Map(
+                        "desktop", desktop_num,
+                        "hotkey", entry["hotkey"]
+                    ))
+                }
+            }
+        } else if (val is Map) {
+            if val.Has("hotkey") && val["hotkey"] != "" {
+                desktop_hotkeys.Push(Map(
+                    "desktop", desktop_num,
+                    "hotkey", val["hotkey"]
+                ))
+            }
+        }
+    }
+
+    if (desktop_hotkeys.Length > 0)
+        vd_config["desktop_hotkeys"] := desktop_hotkeys
+
+    for _, key in keys_to_remove
+        vd_config.Delete(key)
 }
 
 ValidateSuperKeys(config, errors) {

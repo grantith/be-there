@@ -53,6 +53,8 @@ Other
 - `super + alt` sends `ctrl + tab` (configurable via `global_hotkeys`)
 - `super + c` cycle through windows of the same app
 - `super + shift + c` cycle through windows of the same app on the current desktop
+- `super + alt + h/l` switch to previous/next virtual desktop
+- `super + alt + shift + h/l` move the active window to previous/next desktop (follow)
 - `super + w` open Window Selector (fuzzy find open windows)
 - `alt + h/l` move window focus left/right
 - `alt + j/k` move window focus down/up (non-stacked)
@@ -91,7 +93,7 @@ Enter Command Mode with `super + ;`.
 - `window.cycle_app_windows_current_hotkey`: hotkey to cycle app windows on the current desktop only.
 - `window_selector`: Window Selector settings (hotkey, match fields, display limits).
 - `window_manager`: grid size, margins, gaps, and ignored window classes.
-- `virtual_desktop`: cross-desktop focus/cycle settings and desktop auto-creation.
+- `virtual_desktop`: cross-desktop focus/cycle settings, desktop auto-creation, and virtual desktop hotkeys.
 - `directional_focus`: directional focus settings (stacked threshold, stack tolerance, topmost preference, last-stacked preference, frontmost guard, perpendicular overlap min, cross-monitor, debug).
 - `focus_border`: overlay appearance and update interval (including command mode color).
 - `helper`: command overlay settings.
@@ -104,6 +106,11 @@ Enter Command Mode with `super + ;`.
 - Plain title text supports AutoHotkey's standard title matching and wildcards (e.g., `* - Notepad`).
 - `ahk_exe`, `ahk_class`, and `ahk_pid` are exact matches; `win_title` does not support regex (use `apps[].match` for regex).
 - `apps[].match` provides explicit matching by `exe`, `class`, and/or `title` with optional `*_regex` flags (non-regex is exact, case-insensitive).
+
+### Virtual Desktop Hotkeys
+- `virtual_desktop.prev_hotkey` / `virtual_desktop.next_hotkey`: switch to previous/next desktop while holding super+alt (defaults to `h` / `l`).
+- `virtual_desktop.move_prev_hotkey` / `virtual_desktop.move_next_hotkey`: move the active window to previous/next desktop (follow) while holding super+alt+shift (defaults to `h` / `l`).
+- `[[virtual_desktop.<N>]]`: map a desktop number to a hotkey. `super + alt + <key>` switches to desktop `N`, `super + alt + shift + <key>` moves the active window to desktop `N` (follow).
 
 ### Path Expansion
 - `apps[].run_paths` supports environment variables like `%APPDATA%` and `%LOCALAPPDATA%`.
