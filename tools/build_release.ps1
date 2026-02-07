@@ -20,6 +20,22 @@ function Get-AssetUrl($repo, $pattern) {
     return $asset.browser_download_url
 }
 
+function Get-AlphaAssetUrl($repo, $pattern) {
+    if ($repo -eq "AutoHotkey/AutoHotkey") {
+        $version = Invoke-RestMethod -Uri "https://www.autohotkey.com/download/2.1/version.txt"
+        $version = $version.Trim()
+        if (!$version) { throw "Alpha version not found at autohotkey.com" }
+        return "https://www.autohotkey.com/download/2.1/AutoHotkey_$version.zip"
+    }
+
+    $releases = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases?per_page=100"
+    $alpha = $releases | Where-Object { $_.tag_name -match "alpha" } | Select-Object -First 1
+    if (!$alpha) { throw "Alpha release not found for $repo" }
+    $asset = $alpha.assets | Where-Object { $_.name -match $pattern } | Select-Object -First 1
+    if (!$asset) { throw "Alpha release asset not found for $repo" }
+    return $asset.browser_download_url
+}
+
 function Download-And-Extract($url, $dest_dir) {
     $zip_path = Join-Path $dest_dir "download.zip"
     Invoke-WebRequest -Uri $url -OutFile $zip_path
@@ -27,9 +43,24 @@ function Download-And-Extract($url, $dest_dir) {
     Remove-Item $zip_path -Force
 }
 
+function Test-AhkAlpha($path) {
+    if (!(Test-Path $path)) { return $false }
+    try {
+        $ver = (Get-Item $path).VersionInfo.FileVersion
+        $parsed = [version]$ver
+        return ($parsed.Major -ge 2 -and $parsed.Minor -ge 1)
+    } catch {
+        return $false
+    }
+}
+
 if (!(Get-ChildItem -Path $ahk_path -Recurse -Filter Ahk2Exe.exe -ErrorAction SilentlyContinue)) {
-    Write-Host "Downloading Ahk2Exe (latest release)..."
-    $url = Get-AssetUrl "AutoHotkey/Ahk2Exe" "^Ahk2Exe.*\.zip$"
+    Write-Host "Downloading Ahk2Exe (v2.1 alpha if available)..."
+    try {
+        $url = Get-AlphaAssetUrl "AutoHotkey/Ahk2Exe" "^Ahk2Exe.*\.zip$"
+    } catch {
+        $url = Get-AssetUrl "AutoHotkey/Ahk2Exe" "^Ahk2Exe.*\.zip$"
+    }
     Download-And-Extract $url $ahk_path
 }
 
@@ -48,9 +79,15 @@ if (!(Get-ChildItem -Path $ahk_path -Recurse -Filter AutoHotkeySC.bin -ErrorActi
     }
 }
 
-if (!(Get-ChildItem -Path $ahk_path -Recurse -Filter AutoHotkeySC.bin -ErrorAction SilentlyContinue) -and !(Get-ChildItem -Path $ahk_path -Recurse -Filter AutoHotkey64.exe -ErrorAction SilentlyContinue) -and !(Get-ChildItem -Path $ahk_path -Recurse -Filter AutoHotkey32.exe -ErrorAction SilentlyContinue)) {
-    Write-Host "Downloading AutoHotkey base bin (latest release)..."
-    $url = Get-AssetUrl "AutoHotkey/AutoHotkey" "^AutoHotkey_.*\.zip$"
+$existing_ahk64 = Get-ChildItem -Path $ahk_path -Recurse -Filter AutoHotkey64.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+$existing_ahk32 = Get-ChildItem -Path $ahk_path -Recurse -Filter AutoHotkey32.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+$needs_alpha = $true
+if ($existing_ahk64 -and (Test-AhkAlpha $existing_ahk64.FullName)) { $needs_alpha = $false }
+elseif ($existing_ahk32 -and (Test-AhkAlpha $existing_ahk32.FullName)) { $needs_alpha = $false }
+
+if ($needs_alpha) {
+    Write-Host "Downloading AutoHotkey v2.1 alpha base bin..."
+    $url = Get-AlphaAssetUrl "AutoHotkey/AutoHotkey" "^AutoHotkey_2\.1-alpha.*\.zip$"
     Download-And-Extract $url $ahk_path
 }
 
@@ -81,9 +118,18 @@ $main_args = @(
 )
 
 
-$null = Start-Process -FilePath $compiler -ArgumentList $main_args -NoNewWindow -Wait -PassThru
+$stdout_path = Join-Path $out_path "ahk2exe.stdout.log"
+$stderr_path = Join-Path $out_path "ahk2exe.stderr.log"
+if (Test-Path $stdout_path) { Remove-Item $stdout_path -Force }
+if (Test-Path $stderr_path) { Remove-Item $stderr_path -Force }
+
+$proc = Start-Process -FilePath $compiler -ArgumentList $main_args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout_path -RedirectStandardError $stderr_path
 if (!(Test-Path $exe_path)) {
-    throw "Ahk2Exe did not produce harken.exe. Check the compiler base file and try again."
+    $stdout = ""
+    $stderr = ""
+    if (Test-Path $stdout_path) { $stdout = Get-Content $stdout_path -Raw }
+    if (Test-Path $stderr_path) { $stderr = Get-Content $stderr_path -Raw }
+    throw "Ahk2Exe did not produce harken.exe (exit $($proc.ExitCode)).`nSTDOUT:`n$stdout`nSTDERR:`n$stderr"
 }
 Write-Host "Compiled: $exe_path"
 
