@@ -1,7 +1,7 @@
 # Harken
 A window manager written in AutoHotkey v2.
 
-The aim is a keyboard-centered workflow on Windows: a single super modifier, mnemonic app keys, and fast window actions. Alt+Tab and Win+Tab still work, but you will hardly use them.
+Harken allows a keyboard-centered workflow on Windows: a single super modifier, mnemonic app keys, and fast window actions. Alt+Tab and Win+Tab still work, but you will hardly use them.
 
 ## Contents
 - [Overview](#overview)
@@ -95,10 +95,76 @@ Enter Command Mode with `super + ;`.
 
 ### Quick start
 
-- Start the program and enter command mode with `super + ;`. The binary is not currently signed and you will be warned by Windows. Clone and use `main.ahk` directly as an alternative.
-- Press `e` to open the config file. You can also find it manually in `~/.config/harken/harken.toml`.
-- The repository example lives at `config/config.example.toml`.
+- If not using the binary, make sure to install AutoHotKey 2.1-alpha18 or newer.
+- Start the program and enter command mode with `super + ;`. The binary is not currently signed and you will be warned by Windows. Clone and use `harken.ahk` directly as an alternative.
+- The program might fail on first run? Probably something to do with the config. For now you can create the config first to _maybe_ avoid the initial-crash scenario.
+- Press `e` to open the config file. You can also find it manually in `~/.config/harken/harken.toml` as it will be created on first run.
 - After making changes to your config you can reload the config (the entire program, actually) with `r` while in command mode.
+
+### All default keybindings
+
+#### Window management (Super)
+
+| Shortcut | Action |
+| --- | --- |
+| `super + /` | Show command overlay (temporary) |
+| `super + w` | Window selector (window walker) |
+| `super + c` | Cycle app windows on current desktop |
+| `super + shift + c` | Cycle app windows across desktops (not working) |
+| `super + space` | Center width cycle |
+| `super + m` | Maximize/un-maximize |
+| `super + q` | Close window |
+| `super + Left/Right/Up/Down` | Resize window and snap to grids |
+| `super + shift + h/j/k/l` | Resize centered |
+| `super + ctrl + h/j/k/l` | Move window |
+| `super` (double tap) | Toggle move mode |
+
+#### Window management (Move mode)
+
+| Shortcut | Action |
+| --- | --- |
+| `h/j/k/l` | Move window |
+| `Esc` or `super` | Exit move mode |
+
+#### Focus navigation (Alt)
+
+| Shortcut | Action |
+| --- | --- |
+| `alt + h/l` | Focus left/right |
+| `alt + j/k` | Focus down/up |
+| `alt + [` / `alt + ]` | Cycle stacked (prev/next) |
+
+#### Virtual desktops
+
+| Shortcut | Action |
+| --- | --- |
+| `super + alt + h/l` | Previous/next desktop |
+| `super + alt + shift + h/l` | Move window to previous/next desktop (follow) |
+| `super + alt + <key>` | Go to mapped desktop (`[[virtual_desktop.<N>]]`) |
+| `super + alt + shift + <key>` | Move window to mapped desktop (follow) |
+
+#### Apps (defaults)
+
+These are examples for the launch-or-focus keybindings.
+
+| Shortcut | Action |
+| --- | --- |
+| `super + e` | Files (`explorer.exe`) |
+| `super + v` | Editor (`Code.exe`) |
+| `super + s` | Terminal (`WindowsTerminal.exe`) |
+| `super + n` | Notes (`notepad++.exe`) |
+
+#### Command mode
+
+| Shortcut | Action |
+| --- | --- |
+| `super + ;` | Enter command mode |
+| `r` | Reload program/config |
+| `e` | Open config file |
+| `w` | Open a new window for the active app |
+| `n` | Toggle command overlay |
+| `i` | Open window inspector |
+| `Esc` | Exit command mode |
 
 
 ### Helper Utility
@@ -107,9 +173,9 @@ Enter Command Mode with `super + ;`.
 - In Command Mode, press `i` to launch the window inspector.
 - Use Refresh to update the list; Copy Selected/All or Export to save results.
 
-## Known Limitations
+## Limitations
 - This has not been tested with multi-monitor setups or much outside of ultra-wide monitors.
-- Virtual desktop integration requires AutoHotkey v2.1 alpha or later.
+- Virtual desktop integration requires AutoHotkey v2.1-alpha-18 or later.
 - Some apps (e.g., Discord) launch via `Update.exe` and keep versioned subfolders, which makes auto-resolution unreliable for launching or focusing more challenging.
 - For some apps that minimize or close to the system tray, it's recommended you disable that in the program. Otherwise you can try to set `apps[].run` to a stable full path (or use `run_paths`) in your config.
 - Windows with elevated permissions may ignore Harken hotkeys unless Harken is run as Administrator.
@@ -117,6 +183,8 @@ Enter Command Mode with `super + ;`.
 ## Third-Party
 - JXON (AHK v2 JSON serializer) from https://github.com/TheArkive/JXON_ahk2
   - License: `LICENSES/JXON_ahk2-LICENSE.md`
+- VD.ahk from https://github.com/FuPeiJiang/VD.ahk
+  - License: `LICENSES/VD.ahk-LICENSE.md`
 
 ## Similar tools and inspirations
 

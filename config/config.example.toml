@@ -1,4 +1,5 @@
 config_version = 1
+# Use one or more keys as super (CapsLock is the default).
 super_key = ["F24", "CapsLock"]
 
 [[apps]]
@@ -45,6 +46,7 @@ hotkey = "t"
 win_title = "ahk_exe telegram.exe"
 run = "telegram"
 run_paths = []
+# desktop = 2
 
 [[apps]]
 id = "discord"
@@ -52,23 +54,29 @@ hotkey = "d"
 win_title = "ahk_exe discord.exe"
 run = "discord"
 run_paths = []
+# desktop = 2
 
 [[apps]]
 id = "vscode-border"
 match = { exe = "Code.exe", title = " - Visual Studio Code$", title_regex = true }
-focus_border = { border_color = "#4D96FF", border_thickness = 3 }
+# Optional per-app focus border tweaks.
+focus_border = { border_color = "#4D96FF", border_thickness = 3, corner_radius = 12lll }
 
 [[global_hotkeys]]
 enabled = true
 hotkey = "Alt"
 target_exes = []
+# Send Ctrl+Tab when holding super+alt.
+# Will require virtual desktop hotkeys to be used without pressing super first in the combo.
 send_keys = "^{Tab}"
 
 [window]
 resize_step = 20
 move_step = 20
 super_double_tap_ms = 300
+# Cycle app windows across all desktops.
 cycle_app_windows_hotkey = "c"
+# Cycle app windows on the current desktop only.
 cycle_app_windows_current_hotkey = "+c"
 center_width_cycle_hotkey = "Space"
 
@@ -102,24 +110,26 @@ enabled = true
 switch_on_focus = true
 ensure_count = 0
 cycle_prefer_current = true
+# Hotkey fields here use AHK syntax without super (super is implied).
+# Modifiers are applied by Harken (alt or alt+shift) for desktop actions.
 prev_hotkey = "h"
 next_hotkey = "l"
 move_prev_hotkey = "h"
 move_next_hotkey = "l"
-# debug_cycle = false
-# debug_hotkeys = false
-# tray_indicator = false
-# tray_format = "{current}/{total}"
-# hotkey fields use AHK syntax without super (super is implied)
-# modifiers are applied by Harken (alt or alt+shift) for desktop actions
+# Debug logs write to %APPDATA%\harken when enabled.
+debug_cycle = false
+debug_hotkeys = false
+tray_indicator = true
+tray_format = "{current}/{total}"
 
 [[virtual_desktop.1]]
-hotkey = "u"
+hotkey = "1"
 
 [[virtual_desktop.2]]
-hotkey = "i"
+hotkey = "2"
 
 [directional_focus]
+# Directional focus was tricky to make good enough.
 enabled = true
 stacked_overlap_threshold = 0.5
 stack_tolerance_px = 25
@@ -132,7 +142,7 @@ debug_enabled = false
 
 [focus_border]
 enabled = true
-border_color = "#357EC7"
+border_color = "#222feb"
 move_mode_color = "#2ECC71"
 command_mode_color = "#FFD400"
 border_thickness = 4
@@ -148,7 +158,7 @@ enabled = true
 hotkey = "r"
 super_key_required = true
 watch_enabled = false
-watch_interval_ms = 1000
+watch_interval_ms = 2500
 mode_enabled = true
 mode_hotkey = ";"
 mode_timeout_ms = 20000
