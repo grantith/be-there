@@ -252,25 +252,28 @@ ApplyCurrentDesktopOrder(exe, win_list, active_hwnd, current_only := false) {
         return win_list
     }
 
-    if current_only
-        return current_order
+    if current_only {
+        ; Keep stable ordering to avoid z-order oscillation while cycling.
+        ordered := []
+        for _, id in win_list {
+            if current_set.Has(id)
+                ordered.Push(id)
+        }
+        return ordered
+    }
 
     if !Config["virtual_desktop"]["cycle_prefer_current"]
         return win_list
 
+    ; Preserve win_list order while preferring current desktop windows first.
     ordered := []
-    for _, id in current_order
-        ordered.Push(id)
-
-    seen := Map()
-    for _, id in current_order
-        seen[id] := true
-
     for _, id in win_list {
-        if seen.Has(id)
-            continue
-        ordered.Push(id)
-        seen[id] := true
+        if current_set.Has(id)
+            ordered.Push(id)
+    }
+    for _, id in win_list {
+        if !current_set.Has(id)
+            ordered.Push(id)
     }
     return ordered
 }

@@ -32,6 +32,9 @@ Single test / focused run:
   - If virtual desktops touched: test `super+alt+h/l`, mapped desktop hotkeys, and tray indicator.
 
 ## Code Style Guidelines
+
+Comment the "why" in and around code to help provide context from the instructions and conversations leading to changes.
+
 ### AutoHotkey version and file headers
 - Use AutoHotkey v2 syntax and conventions.
 - Virtual desktop integration requires AutoHotkey v2.1 alpha (VD.ahk dependency).
