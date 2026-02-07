@@ -22,9 +22,7 @@ function Get-AssetUrl($repo, $pattern) {
 
 function Get-AlphaAssetUrl($repo, $pattern) {
     if ($repo -eq "AutoHotkey/AutoHotkey") {
-        $version = Invoke-RestMethod -Uri "https://www.autohotkey.com/download/2.1/version.txt"
-        $version = $version.Trim()
-        if (!$version) { throw "Alpha version not found at autohotkey.com" }
+        $version = "2.1-alpha.18"
         return "https://www.autohotkey.com/download/2.1/AutoHotkey_$version.zip"
     }
 
