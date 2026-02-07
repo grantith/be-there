@@ -108,6 +108,8 @@ move_prev_hotkey = "h"
 move_next_hotkey = "l"
 # debug_cycle = false
 # debug_hotkeys = false
+# tray_indicator = false
+# tray_format = "{current}/{total}"
 # hotkey fields use AHK syntax without super (super is implied)
 # modifiers are applied by Harken (alt or alt+shift) for desktop actions
 

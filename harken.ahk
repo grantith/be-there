@@ -136,7 +136,9 @@ DefaultConfig() {
             "goto_hotkeys", [],
             "move_hotkeys", [],
             "debug_cycle", false,
-            "debug_hotkeys", false
+            "debug_hotkeys", false,
+            "tray_indicator", false,
+            "tray_format", "{current}/{total}"
         ),
         "directional_focus", Map(
             "enabled", true,

@@ -121,6 +121,8 @@ ConfigSchema() {
             )],
             "debug_cycle", "bool",
             "debug_hotkeys", "bool",
+            "tray_indicator", "bool",
+            "tray_format", "string",
             "desktop_hotkeys_duplicates", OptionalSpec([Map(
                 "hotkey", "string",
                 "desktop", "number",

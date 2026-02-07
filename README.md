@@ -1,7 +1,7 @@
 # Harken
 A window manager written in AutoHotkey v2.
 
-The aim is a low-friction workflow: a single super modifier, mnemonic app keys, and fast window actions. Alt+Tab and Win+Tab still work, but you will hardly use them.
+The aim is a keyboard-centered workflow on Windows: a single super modifier, mnemonic app keys, and fast window actions. Alt+Tab and Win+Tab still work, but you will hardly use them.
 
 ## Contents
 - [Overview](#overview)
@@ -23,6 +23,20 @@ The aim is a low-friction workflow: a single super modifier, mnemonic app keys, 
 > CapsLock is the default super key, because who needs it?
 
 ### Features
+
+- Launch-or-focus your most common programs with the hotkeys you assign in your config file.
+- Focused tile includes border highlight that can be customized, including per app, window class, or window title.
+- Snap tiles to grid and cycle through various positions with subsequent key presses.
+- Freely move tiles with your keyboard.
+- Resize tiles and their edges with your keyboard.
+- Directional focus changes with vim-like motions.
+- Cycle stacked tiles with `super + [` and `super + ]`.
+- Cycle focus between tiles of the same program with `super + c`.
+- Show a hotkey menu with `super + /`.
+- Virtual desktops (native)
+  - Navigate between desktops with better hotkeys
+  - Assign custom hotkeys for the index-based virtual desktops.
+
 
 
 Launch-or-focus a program with `super + [letter]`, or directionally change window focus with `alt + h/l/j/k` (left, right, down, up) and `alt + [` / `alt + ]` for back/forward in a stack.
@@ -59,7 +73,8 @@ Other
 - `alt + h/l` move window focus left/right
 - `alt + j/k` move window focus down/up (non-stacked)
 - `alt + [` / `alt + ]` move window focus forward/back through stacked windows
-- Custom border params per exe/title/class. For example, color certain vscode project windows with different colors/thickness.
+- `super + alt + h/l` to move between desktops
+- `super + shift + alt + h/l` send current tile to adjacent desktop
 
 Enter Command Mode with `super + ;`.
 - `r` to reload program/config
@@ -67,6 +82,13 @@ Enter Command Mode with `super + ;`.
 - `w` opens a new window for the active program, if the program supports it
 - `n` toggles the command overlay on or off
 - `i` opens the [Helper Utility](#helper-utility)
+
+## TODO
+
+- Clarify and work on areas of state
+  - saving layouts
+  - per app configs determining where things go (virtual desktop destination is supported now)
+- Possibly rework the config schema. It's hectic.
 
 
 ## Configuration
@@ -78,43 +100,6 @@ Enter Command Mode with `super + ;`.
 - The repository example lives at `config/config.example.toml`.
 - After making changes to your config you can reload the config (the entire program, actually) with `r` while in command mode.
 
-### Default Config Keys
-- `super_key`: key or list of keys used as the super modifier (e.g., `CapsLock` or `["F24", "CapsLock"]`).
-- `apps`: list of app bindings with `hotkey`, `win_title`/`match`, and `run` command. Omit `hotkey` for matcher-only entries (they won't appear in the Command Overlay).
-- `apps[].run_paths`: optional list of directories to search for the executable.
-- `apps[].run_start_in`: optional working directory for launching the app.
-- `apps[].match`: optional match map with `exe`, `class`, `title`, and `*_regex` flags (exact match is case-insensitive by default; regex is also case-insensitive).
-- `apps[].focus_border`: optional per-app focus border overrides (colors, thickness, and corner radius).
-- `apps[].desktop`: optional virtual desktop number to move new windows to.
-- `apps[].follow_on_spawn`: optional override for whether to switch to the app's desktop after launching (default true).
-- `global_hotkeys`: array of scoped hotkey bindings (set `target_exes` empty for global use).
-- `window`: resize/move steps and hotkeys (including move mode).
-- `window.minimize_others_hotkey`: optional hotkey to minimize all other windows on the current monitor.
-- `window.cycle_app_windows_current_hotkey`: hotkey to cycle app windows on the current desktop only.
-- `window_selector`: Window Selector settings (hotkey, match fields, display limits).
-- `window_manager`: grid size, margins, gaps, and ignored window classes.
-- `virtual_desktop`: cross-desktop focus/cycle settings, desktop auto-creation, and virtual desktop hotkeys.
-- `directional_focus`: directional focus settings (stacked threshold, stack tolerance, topmost preference, last-stacked preference, frontmost guard, perpendicular overlap min, cross-monitor, debug).
-- `focus_border`: overlay appearance and update interval (including command mode color).
-- `helper`: command overlay settings.
-- `reload`: hotkey and file watch settings for config reload.
-
-### Window Matching
-- `apps[].win_title` accepts standard AutoHotkey window selectors.
-- Common forms: plain title text, `ahk_exe <exe>`, `ahk_class <class>`, `ahk_pid <pid>`.
-- Use `ahk_exe` for stable matching when window titles change (e.g., tabs/documents).
-- Plain title text supports AutoHotkey's standard title matching and wildcards (e.g., `* - Notepad`).
-- `ahk_exe`, `ahk_class`, and `ahk_pid` are exact matches; `win_title` does not support regex (use `apps[].match` for regex).
-- `apps[].match` provides explicit matching by `exe`, `class`, and/or `title` with optional `*_regex` flags (non-regex is exact, case-insensitive).
-
-### Virtual Desktop Hotkeys
-- `virtual_desktop.prev_hotkey` / `virtual_desktop.next_hotkey`: switch to previous/next desktop while holding super+alt (defaults to `h` / `l`).
-- `virtual_desktop.move_prev_hotkey` / `virtual_desktop.move_next_hotkey`: move the active window to previous/next desktop (follow) while holding super+alt+shift (defaults to `h` / `l`).
-- `[[virtual_desktop.<N>]]`: map a desktop number to a hotkey. `super + alt + <key>` switches to desktop `N`, `super + alt + shift + <key>` moves the active window to desktop `N` (follow).
-
-### Path Expansion
-- `apps[].run_paths` supports environment variables like `%APPDATA%` and `%LOCALAPPDATA%`.
-- `~\` expands to your user profile (e.g., `~\AppData\Roaming`).
 
 ### Helper Utility
 - `tools/window_inspector.ahk` lists active window titles, exe names, classes, and PIDs.
