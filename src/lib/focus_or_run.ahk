@@ -4,60 +4,177 @@
 FocusOrRun(winTitle, exePath, hotkey_id, app_config := "", *) {
     static last_window := Map()
     target_hwnd := 0
-    hwnds := WinGetList(winTitle)
-    current_hwnd := WinGetID("A")
+    hwnds := GetAppWindowList(winTitle, app_config)
+    current_hwnd := 0
+    try current_hwnd := WinGetID("A")
+    catch
+        current_hwnd := 0
 
     if (hwnds.Length) {
-        for hwnd in hwnds {
-            if (InStr(winTitle, "explorer.exe")) {
-                class_name := WinGetClass("ahk_id " hwnd)
-                if (class_name = "Progman" || class_name = "WorkerW" || class_name = "Shell_TrayWnd")
-                    continue
-            }
-            ex_style := WinGetExStyle("ahk_id " hwnd)
-            if (ex_style & 0x80) || (ex_style & 0x8000000)
-                continue
-            if (!(WinGetStyle("ahk_id " hwnd) & 0x10000000))
-                continue
-
-            state := WinGetMinMax("ahk_id " hwnd)
-            if (state = -1) {
-                if (!target_hwnd)
-                    target_hwnd := hwnd
-                continue
-            }
-            target_hwnd := hwnd
-            break
-        }
+        target_hwnd := PickFocusableAppWindow(hwnds, winTitle)
         if (!target_hwnd)
             target_hwnd := hwnds[1]
     }
 
     if target_hwnd {
         if (current_hwnd = target_hwnd) {
-            if last_window.Has(hotkey_id) && WinExist("ahk_id " last_window[hotkey_id]) {
-                WinActivate "ahk_id " last_window[hotkey_id]
+            if last_window.Has(hotkey_id) && WindowExistsAcrossDesktops(last_window[hotkey_id]) {
+                ActivateWindowAcrossDesktops(last_window[hotkey_id])
             }
             return
         }
         if current_hwnd && (current_hwnd != target_hwnd) {
             last_window[hotkey_id] := current_hwnd
         }
-        WinActivate "ahk_id " target_hwnd
+        ActivateWindowAcrossDesktops(target_hwnd)
     } else {
         RunResolved(exePath, app_config)
+        ScheduleMoveAppWindowToDesktop(winTitle, app_config)
     }
+}
+
+GetAppWindowList(win_title, app_config := "") {
+    if (app_config is Map && app_config.Has("match") && app_config["match"] is Map) {
+        return GetWindowsByMatch(app_config["match"])
+    }
+    if !win_title
+        return []
+    return GetWindowsAcrossDesktops(win_title)
+}
+
+GetWindowsByMatch(match) {
+    matches := []
+    for _, hwnd in GetWindowsAcrossDesktops() {
+        if MatchWindowFields(match, hwnd)
+            matches.Push(hwnd)
+    }
+    return matches
+}
+
+PickFocusableAppWindow(hwnds, win_title) {
+    for hwnd in hwnds {
+        if !WinExist("ahk_id " hwnd)
+            continue
+        if (InStr(win_title, "explorer.exe")) {
+            class_name := WinGetClass("ahk_id " hwnd)
+            if (class_name = "Progman" || class_name = "WorkerW" || class_name = "Shell_TrayWnd")
+                continue
+        }
+        try ex_style := WinGetExStyle("ahk_id " hwnd)
+        catch
+            continue
+        if (ex_style & 0x80) || (ex_style & 0x8000000)
+            continue
+        try style := WinGetStyle("ahk_id " hwnd)
+        catch
+            continue
+        allow_invisible := false
+        if VirtualDesktopEnabled() {
+            desktop_num := GetWindowDesktopNum(hwnd)
+            if (desktop_num <= 0)
+                allow_invisible := true
+            else if (desktop_num != VD.getCurrentDesktopNum())
+                allow_invisible := true
+        }
+        if (!allow_invisible && !(style & 0x10000000))
+            continue
+
+        state := WinGetMinMax("ahk_id " hwnd)
+        if (state = -1)
+            continue
+        return hwnd
+    }
+
+    for hwnd in hwnds {
+        if !WinExist("ahk_id " hwnd)
+            continue
+        state := WinGetMinMax("ahk_id " hwnd)
+        if (state = -1)
+            return hwnd
+    }
+    return 0
+}
+
+ScheduleMoveAppWindowToDesktop(win_title, app_config := "") {
+    if !VirtualDesktopEnabled()
+        return
+    target_desktop := GetAppTargetDesktop(app_config)
+    if (target_desktop <= 0)
+        return
+
+    follow_on_spawn := GetAppFollowOnSpawn(app_config)
+    attempts := 0
+    callback := 0
+    callback := () => TryMoveAppWindowToDesktop(win_title, app_config, target_desktop, follow_on_spawn, &attempts, callback)
+    SetTimer(callback, 200)
+}
+
+GetAppTargetDesktop(app_config := "") {
+    if !(app_config is Map)
+        return 0
+    if !app_config.Has("desktop")
+        return 0
+    return app_config["desktop"]
+}
+
+GetAppFollowOnSpawn(app_config := "") {
+    if (app_config is Map && app_config.Has("follow_on_spawn"))
+        return app_config["follow_on_spawn"]
+    return true
+}
+
+TryMoveAppWindowToDesktop(win_title, app_config, target_desktop, follow_on_spawn, &attempts, callback) {
+    attempts += 1
+    hwnds := GetAppWindowList(win_title, app_config)
+    hwnd := PickFocusableAppWindow(hwnds, win_title)
+    if (!hwnd && hwnds.Length)
+        hwnd := hwnds[1]
+
+    if (hwnd) {
+        VD.MoveWindowToDesktopNum("ahk_id " hwnd, target_desktop, follow_on_spawn)
+        if follow_on_spawn {
+            VD.goToDesktopNum(target_desktop)
+            VD.WaitDesktopSwitched(target_desktop)
+        }
+        try {
+            assigned_desktop := GetWindowDesktopNum(hwnd)
+            if (assigned_desktop > 0 && assigned_desktop != target_desktop)
+                VD.MoveWindowToDesktopNum("ahk_id " hwnd, target_desktop, follow_on_spawn)
+        }
+        SetTimer(callback, 0)
+        return
+    }
+
+    if (attempts >= 30)
+        SetTimer(callback, 0)
 }
 
 RunResolved(command, app_config := "") {
     resolved := ResolveRunPath(command, app_config)
+    run_start_in := ""
+    if (app_config is Map && app_config.Has("run_start_in"))
+        run_start_in := app_config["run_start_in"]
     try {
-        Run resolved
+        if (run_start_in = "") {
+            link_info := ResolveShortcutStartIn(resolved)
+            if (link_info is Map) {
+                resolved := link_info["target"]
+                run_start_in := link_info["start_in"]
+            }
+        } else if (StrLower(SubStr(resolved, -4)) = ".lnk") {
+            shortcut := ResolveShortcutTarget(resolved)
+            if shortcut
+                resolved := shortcut
+        }
+        if (run_start_in != "")
+            Run resolved, run_start_in
+        else
+            Run resolved
     } catch as err {
         MsgBox(
             "Failed to launch: " command "`n" err.Message "`n`n" .
             "Tip: set apps[].run to a full path or an App Paths-registered exe.",
-            "be-there",
+            "harken",
             "Iconx"
         )
     }
@@ -67,6 +184,9 @@ ResolveRunPath(command, app_config := "") {
     command := Trim(command, " `t")
     if (SubStr(command, 1, 1) = '"' && SubStr(command, -1) = '"')
         command := SubStr(command, 2, -1)
+    if (StrLower(SubStr(command, -4)) = ".lnk") {
+        return command
+    }
     if (InStr(command, "\\") || InStr(command, "/") || InStr(command, ":")) {
         if FileExist(command)
             return command
@@ -199,28 +319,45 @@ FindStartMenuShortcut(command) {
                 if !target
                     continue
                 if InStr(StrLower(target), name)
-                    return target
+                    return A_LoopFilePath
                 continue
             }
             target := ResolveShortcutTarget(A_LoopFilePath)
             if target
-                return target
+                return A_LoopFilePath
         }
     }
     return ""
 }
 
 ResolveShortcutTarget(link_path) {
-    if !FileExist(link_path)
+    if !link_path || !FileExist(link_path)
         return ""
     try {
         shell := ComObject("WScript.Shell")
         shortcut := shell.CreateShortcut(link_path)
-        target := shortcut.TargetPath
-        if target && FileExist(target)
-            return target
+        target := Trim(shortcut.TargetPath " " shortcut.Arguments)
+        return target
+    } catch {
+        return ""
     }
-    return ""
+}
+
+ResolveShortcutStartIn(link_path) {
+    if !link_path || !FileExist(link_path)
+        return ""
+    if (StrLower(SubStr(link_path, -4)) != ".lnk")
+        return ""
+    try {
+        shell := ComObject("WScript.Shell")
+        shortcut := shell.CreateShortcut(link_path)
+        return Map(
+            "target", Trim(shortcut.TargetPath " " shortcut.Arguments),
+            "start_in", shortcut.WorkingDirectory
+        )
+    } catch {
+        return ""
+    }
 }
 
 FindWindowsAppsAlias(exe_name) {

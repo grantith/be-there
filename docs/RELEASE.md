@@ -4,23 +4,23 @@ This project ships two artifacts per release:
 
 ## 1) Source zip
 Include:
-- `be-there.ahk`
+- `harken.ahk`
 - `src/`
 - `tools/`
-- `config/config.example.json`
+- `config/config.example.toml`
 - `README.md`, `LICENSE`, `LICENSES/`
 
 ## 2) Compiled zip
 Include:
-- `be-there.exe`
+- `harken.exe`
 - `tools/` (optional; requires AutoHotkey for `.ahk` tools)
-- `config/config.example.json`
+- `config/config.example.toml`
 - `README.md`, `LICENSE`, `LICENSES/`
 
 ## Checklist
 - Update `README.md` if config/schema changed.
 - Update `docs/INSTALL.md` if paths or requirements changed.
-- Verify `config/config.example.json` matches defaults.
+- Verify `config/config.example.toml` matches defaults.
 - (Optional) test start/reload and Command Overlay in both variants.
 
 ## GitHub Release Flow
@@ -28,9 +28,9 @@ Include:
 2. Create a tag: `git tag vX.Y.Z`.
 3. Push tags: `git push origin vX.Y.Z`.
 4. GitHub Actions builds and publishes release assets:
-   - `be-there-source-vX.Y.Z.zip`
-   - `be-there-vX.Y.Z-win64.zip`
-   - `be-there-vX.Y.Z.exe`
+   - `harken-source-vX.Y.Z.zip`
+   - `harken-vX.Y.Z-win64.zip`
+   - `harken-vX.Y.Z.exe`
 
 ## Release Candidates
 - Use a prerelease tag like `vX.Y.Z-rc.1`.
@@ -52,4 +52,4 @@ powershell -ExecutionPolicy Bypass -File tools/build_release.ps1 -Version dev
 Artifacts are written to `dist/`.
 
 ## Tooling
-- The build script also exports `config.example.json` into `dist/` for quick inspection.
+- The build script also exports `config.example.toml` into `dist/` for quick inspection.

@@ -50,6 +50,5 @@ jobs:
           tag_name: ${{ env.VERSION }}
           prerelease: ${{ env.PRERELEASE }}
           files: |
-            dist/be-there-source-${{ env.VERSION }}.zip
-            dist/be-there-${{ env.VERSION }}-win64.zip
-            dist/be-there.exe
+            dist/harken-source-${{ env.VERSION }}.zip
+            dist/harken.exe

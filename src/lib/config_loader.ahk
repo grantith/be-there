@@ -3,9 +3,8 @@ LoadConfig(config_path, default_config := Map()) {
     errors := []
 
     if FileExist(config_path) {
-        json_text := FileRead(config_path)
         try {
-            user_config := Jxon_Load(&json_text)
+            user_config := TomlLoadFile(config_path)
             config := DeepMergeMaps(config, user_config)
         } catch as err {
             errors.Push("config.parse: " err.Message)
@@ -16,7 +15,12 @@ LoadConfig(config_path, default_config := Map()) {
         }
     }
 
+    NormalizeSuperKeyConfig(config)
+    NormalizeVirtualDesktopConfig(config)
     errors := ValidateConfig(config, ConfigSchema())
+    ValidateSuperKeys(config, errors)
+    ValidateApps(config, errors)
+    ValidateVirtualDesktopHotkeys(config, errors)
 
     return Map(
         "config", config,
@@ -27,13 +31,32 @@ LoadConfig(config_path, default_config := Map()) {
 ConfigSchema() {
     return Map(
         "config_version", "number",
-        "super_key", "string",
+        "super_key", ["string"],
         "apps", [Map(
             "id", "string",
-            "hotkey", "string",
-            "win_title", "string",
-            "run", "string",
-            "run_paths", OptionalSpec(["string"])
+            "hotkey", OptionalSpec("string"),
+            "win_title", OptionalSpec("string"),
+            "match", OptionalSpec(Map(
+                "exe", OptionalSpec("string"),
+                "exe_regex", OptionalSpec("bool"),
+                "class", OptionalSpec("string"),
+                "class_regex", OptionalSpec("bool"),
+                "title", OptionalSpec("string"),
+                "title_regex", OptionalSpec("bool")
+            )),
+            "run", OptionalSpec("string"),
+            "run_start_in", OptionalSpec("string"),
+            "run_paths", OptionalSpec(["string"]),
+            "desktop", OptionalSpec("number"),
+            "follow_on_spawn", OptionalSpec("bool"),
+            "focus_border", OptionalSpec(Map(
+                "border_color", OptionalSpec("string"),
+                "move_mode_color", OptionalSpec("string"),
+                "command_mode_color", OptionalSpec("string"),
+                "border_thickness", OptionalSpec("number"),
+                "corner_radius", OptionalSpec("number"),
+                "update_interval_ms", OptionalSpec("number")
+            ))
         )],
         "global_hotkeys", [Map(
             "enabled", "bool",
@@ -50,7 +73,9 @@ ConfigSchema() {
                 "cancel_key", "string"
             ),
             "cycle_app_windows_hotkey", "string",
-            "center_width_cycle_hotkey", "string"
+            "cycle_app_windows_current_hotkey", "string",
+            "center_width_cycle_hotkey", "string",
+            "minimize_others_hotkey", OptionalSpec("string")
         ),
         "window_selector", Map(
             "enabled", "bool",
@@ -67,10 +92,42 @@ ConfigSchema() {
             "margins", Map(
                 "top", "number",
                 "left", "number",
-                "right", "number"
+                "right", "number",
+                "bottom", "number"
             ),
             "gap_px", "number",
             "exceptions_regex", "string"
+        ),
+        "virtual_desktop", Map(
+            "enabled", "bool",
+            "switch_on_focus", "bool",
+            "ensure_count", "number",
+            "cycle_prefer_current", "bool",
+            "prev_hotkey", "string",
+            "next_hotkey", "string",
+            "move_prev_hotkey", "string",
+            "move_next_hotkey", "string",
+            "desktop_hotkeys", OptionalSpec([Map(
+                "desktop", "number",
+                "hotkey", "string"
+            )]),
+            "goto_hotkeys", [Map(
+                "hotkey", "string",
+                "desktop", "number"
+            )],
+            "move_hotkeys", [Map(
+                "hotkey", "string",
+                "desktop", "number"
+            )],
+            "debug_cycle", "bool",
+            "debug_hotkeys", "bool",
+            "tray_indicator", "bool",
+            "tray_format", "string",
+            "desktop_hotkeys_duplicates", OptionalSpec([Map(
+                "hotkey", "string",
+                "desktop", "number",
+                "existing", "number"
+            )])
         ),
         "directional_focus", Map(
             "enabled", "bool",
@@ -87,6 +144,7 @@ ConfigSchema() {
             "enabled", "bool",
             "border_color", "string",
             "move_mode_color", "string",
+            "command_mode_color", "string",
             "border_thickness", "number",
             "corner_radius", "number",
             "update_interval_ms", "number"
@@ -112,6 +170,134 @@ ValidateConfig(config, schema) {
     errors := []
     ValidateNode(config, schema, "config", errors)
     return errors
+}
+
+NormalizeSuperKeyConfig(config) {
+    if !config.Has("super_key")
+        return
+
+    super_value := config["super_key"]
+    if (super_value is String)
+        config["super_key"] := [super_value]
+}
+
+NormalizeVirtualDesktopConfig(config) {
+    if !config.Has("virtual_desktop") || !(config["virtual_desktop"] is Map)
+        return
+
+    vd_config := config["virtual_desktop"]
+    desktop_hotkeys := []
+    duplicates := []
+    seen_hotkeys := Map()
+    keys_to_remove := []
+
+    for key, val in vd_config {
+        if !IsInteger(key)
+            continue
+        keys_to_remove.Push(key)
+        desktop_num := Integer(key)
+        if (val is Array) {
+            for _, entry in val {
+                if !(entry is Map)
+                    continue
+                if entry.Has("hotkey") && entry["hotkey"] != "" {
+                    hotkey := entry["hotkey"]
+                    if seen_hotkeys.Has(hotkey) {
+                        duplicates.Push(Map("hotkey", hotkey, "desktop", desktop_num, "existing", seen_hotkeys[hotkey]))
+                    } else {
+                        seen_hotkeys[hotkey] := desktop_num
+                        desktop_hotkeys.Push(Map(
+                            "desktop", desktop_num,
+                            "hotkey", hotkey
+                        ))
+                    }
+                }
+            }
+        } else if (val is Map) {
+            if val.Has("hotkey") && val["hotkey"] != "" {
+                hotkey := val["hotkey"]
+                if seen_hotkeys.Has(hotkey) {
+                    duplicates.Push(Map("hotkey", hotkey, "desktop", desktop_num, "existing", seen_hotkeys[hotkey]))
+                } else {
+                    seen_hotkeys[hotkey] := desktop_num
+                    desktop_hotkeys.Push(Map(
+                        "desktop", desktop_num,
+                        "hotkey", hotkey
+                    ))
+                }
+            }
+        }
+    }
+
+    if (desktop_hotkeys.Length > 0)
+        vd_config["desktop_hotkeys"] := desktop_hotkeys
+
+    if (duplicates.Length > 0)
+        vd_config["desktop_hotkeys_duplicates"] := duplicates
+
+    for _, key in keys_to_remove
+        vd_config.Delete(key)
+}
+
+ValidateSuperKeys(config, errors) {
+    if !config.Has("super_key")
+        return
+    super_keys := config["super_key"]
+    if (super_keys is Array && super_keys.Length = 0)
+        errors.Push("config.super_key should contain at least one key")
+}
+
+ValidateApps(config, errors) {
+    if !config.Has("apps") || !(config["apps"] is Array)
+        return
+
+    for index, app in config["apps"] {
+        if !(app is Map)
+            continue
+
+        has_hotkey := app.Has("hotkey") && (app["hotkey"] != "")
+        has_win_title := app.Has("win_title") && (app["win_title"] != "")
+        has_match := app.Has("match") && (app["match"] is Map)
+
+        if !has_win_title && !has_match
+            errors.Push("config.apps[" index "] must define win_title or match")
+
+        if has_hotkey && (!app.Has("run") || app["run"] = "")
+            errors.Push("config.apps[" index "].run is required when hotkey is set")
+
+        if has_match {
+            match := app["match"]
+            has_exe := match.Has("exe") && (match["exe"] != "")
+            has_class := match.Has("class") && (match["class"] != "")
+            has_title := match.Has("title") && (match["title"] != "")
+            if !has_exe && !has_class && !has_title
+                errors.Push("config.apps[" index "].match must define exe, class, or title")
+
+            if (match.Has("exe_regex") && !has_exe)
+                errors.Push("config.apps[" index "].match.exe_regex requires exe")
+            if (match.Has("class_regex") && !has_class)
+                errors.Push("config.apps[" index "].match.class_regex requires class")
+            if (match.Has("title_regex") && !has_title)
+                errors.Push("config.apps[" index "].match.title_regex requires title")
+        }
+    }
+}
+
+ValidateVirtualDesktopHotkeys(config, errors) {
+    if !config.Has("virtual_desktop") || !(config["virtual_desktop"] is Map)
+        return
+    vd_config := config["virtual_desktop"]
+    if vd_config.Has("desktop_hotkeys_duplicates") && (vd_config["desktop_hotkeys_duplicates"] is Array) {
+        for _, entry in vd_config["desktop_hotkeys_duplicates"] {
+            if !(entry is Map)
+                continue
+            hotkey := entry.Has("hotkey") ? entry["hotkey"] : ""
+            desktop := entry.Has("desktop") ? entry["desktop"] : ""
+            existing := entry.Has("existing") ? entry["existing"] : ""
+            if (hotkey != "")
+                errors.Push("config.virtual_desktop.hotkey '" hotkey "' maps to desktop " desktop " but is already mapped to " existing)
+        }
+    }
 }
 
 ValidateNode(value, spec, path, errors) {

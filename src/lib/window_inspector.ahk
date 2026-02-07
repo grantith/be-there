@@ -3,22 +3,25 @@
 ShowWindowInspector() {
     static inspector_gui := ""
     static window_list := ""
+    static refresh_timer := 0
 
     if inspector_gui {
         inspector_gui.Show()
         RefreshList(window_list)
+        StartAutoRefresh(window_list, &refresh_timer)
         return
     }
 
-    inspector_gui := Gui("+Resize", "be-there Window Inspector")
+    inspector_gui := Gui("+Resize", "harken Window Inspector")
     inspector_gui.SetFont("s10", "Segoe UI")
 
-    window_list := inspector_gui.AddListView("w980 r26 Grid", ["Title", "Exe", "Class", "PID", "HWND"])
-    window_list.ModifyCol(1, 400)
-    window_list.ModifyCol(2, 140)
-    window_list.ModifyCol(3, 200)
-    window_list.ModifyCol(4, 80)
-    window_list.ModifyCol(5, 120)
+    window_list := inspector_gui.AddListView("w1020 r26 Grid", ["Active", "Title", "Exe", "Class", "PID", "HWND"])
+    window_list.ModifyCol(1, 60)
+    window_list.ModifyCol(2, 380)
+    window_list.ModifyCol(3, 140)
+    window_list.ModifyCol(4, 200)
+    window_list.ModifyCol(5, 80)
+    window_list.ModifyCol(6, 120)
 
     refresh_btn := inspector_gui.AddButton("xm y+10 w110", "Refresh")
     refresh_btn.OnEvent("Click", (*) => RefreshList(window_list))
@@ -32,22 +35,39 @@ ShowWindowInspector() {
     export_btn := inspector_gui.AddButton("x+10 yp w140", "Export File")
     export_btn.OnEvent("Click", (*) => ExportAll(window_list))
 
-    inspector_gui.OnEvent("Close", (*) => inspector_gui.Hide())
+    inspector_gui.OnEvent("Close", (*) => HideInspector(inspector_gui, &refresh_timer))
     inspector_gui.Show()
 
     RefreshList(window_list)
+    StartAutoRefresh(window_list, &refresh_timer)
 }
 
 RefreshList(window_list) {
     window_list.Delete()
+    active_hwnd := 0
+    try active_hwnd := WinGetID("A")
 
     for _, hwnd in WinGetList() {
         title := WinGetTitle("ahk_id " hwnd)
         exe := WinGetProcessName("ahk_id " hwnd)
         class_name := WinGetClass("ahk_id " hwnd)
         pid := WinGetPID("ahk_id " hwnd)
-        window_list.Add("", title, exe, class_name, pid, Format("0x{:X}", hwnd))
+        active_label := (hwnd = active_hwnd) ? "active" : ""
+        window_list.Add("", active_label, title, exe, class_name, pid, Format("0x{:X}", hwnd))
     }
+}
+
+StartAutoRefresh(window_list, &refresh_timer) {
+    if refresh_timer
+        SetTimer(refresh_timer, 0)
+    refresh_timer := (*) => RefreshList(window_list)
+    SetTimer(refresh_timer, 2000)
+}
+
+HideInspector(inspector_gui, &refresh_timer) {
+    if refresh_timer
+        SetTimer(refresh_timer, 0)
+    inspector_gui.Hide()
 }
 
 CopySelected(window_list) {
@@ -94,14 +114,15 @@ GetRowValues(window_list, row) {
         window_list.GetText(row, 2),
         window_list.GetText(row, 3),
         window_list.GetText(row, 4),
-        window_list.GetText(row, 5)
+        window_list.GetText(row, 5),
+        window_list.GetText(row, 6)
     ]
 }
 
 BuildOutput(rows) {
-    output := "Title\tExe\tClass\tPID\tHWND`n"
+    output := "Active\tTitle\tExe\tClass\tPID\tHWND`n"
     for _, row in rows {
-        output .= row[1] "\t" row[2] "\t" row[3] "\t" row[4] "\t" row[5] "`n"
+        output .= row[1] "\t" row[2] "\t" row[3] "\t" row[4] "\t" row[5] "\t" row[6] "`n"
     }
     return output
 }

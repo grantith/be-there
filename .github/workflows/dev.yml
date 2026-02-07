@@ -35,8 +35,7 @@ jobs:
         if: steps.src_changes.outputs.has_src_changes == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: be-there-dev-${{ github.sha }}
+          name: harken-dev-${{ github.sha }}
           path: |
-            dist\be-there-source-dev.zip
-            dist\be-there-dev-win64.zip
-            dist\be-there.exe
+            dist\harken-source-dev.zip
+            dist\harken.exe

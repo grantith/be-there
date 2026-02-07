@@ -1,10 +1,11 @@
-global Config, super_key
+global Config
 
 RegisterUnboundHotkeys() {
     used_keys := Map()
 
     AddUsedKey(used_keys, Config["window"]["center_width_cycle_hotkey"])
     AddUsedKey(used_keys, Config["window"]["cycle_app_windows_hotkey"])
+    AddUsedKey(used_keys, Config["window"]["cycle_app_windows_current_hotkey"])
     AddUsedKey(used_keys, "m")
     AddUsedKey(used_keys, "q")
     AddUsedKey(used_keys, "h")
@@ -20,7 +21,8 @@ RegisterUnboundHotkeys() {
         AddUsedKey(used_keys, reload_config["hotkey"])
 
     for _, app in Config["apps"] {
-        AddUsedKey(used_keys, app["hotkey"])
+        if app.Has("hotkey") && app["hotkey"] != ""
+            AddUsedKey(used_keys, app["hotkey"])
     }
 
     for _, hotkey_config in Config["global_hotkeys"] {
@@ -29,7 +31,7 @@ RegisterUnboundHotkeys() {
     }
 
     candidates := BuildUnboundCandidateKeys()
-    HotIf (*) => GetKeyState(super_key, "P")
+    HotIf IsSuperKeyPressed
     for _, key in candidates {
         if !used_keys.Has(StrLower(key))
             Hotkey(key, (*) => FlashUnboundHotkey())
