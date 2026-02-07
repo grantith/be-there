@@ -135,7 +135,8 @@ DefaultConfig() {
             "desktop_hotkeys", [],
             "goto_hotkeys", [],
             "move_hotkeys", [],
-            "debug_cycle", false
+            "debug_cycle", false,
+            "debug_hotkeys", false
         ),
         "directional_focus", Map(
             "enabled", true,
@@ -227,6 +228,33 @@ GetAppDataDir() {
     if appdata
         return appdata "\harken"
     return GetConfigDir()
+}
+
+ResetDebugLogs() {
+    if !Config.Has("virtual_desktop") || !(Config["virtual_desktop"] is Map)
+        return
+    vd_config := Config["virtual_desktop"]
+    debug_cycle := vd_config.Has("debug_cycle") && vd_config["debug_cycle"]
+    debug_hotkeys := vd_config.Has("debug_hotkeys") && vd_config["debug_hotkeys"]
+    if !(debug_cycle || debug_hotkeys)
+        return
+
+    log_dir := GetAppDataDir()
+    DirCreate(log_dir)
+    if debug_cycle {
+        TryDeleteFile(log_dir "\cycle.debug.log")
+    }
+    if debug_hotkeys {
+        TryDeleteFile(log_dir "\vd.hotkeys.log")
+        TryDeleteFile(log_dir "\vd.actions.log")
+    }
+}
+
+TryDeleteFile(path) {
+    try {
+        if FileExist(path)
+            FileDelete(path)
+    }
 }
 
 StartConfigWatcher(path, interval_ms := 1000) {
@@ -386,7 +414,7 @@ MatchAppWindow(app, hwnd := 0) {
     if !(app is Map)
         return false
     if (hwnd = 0)
-        hwnd := WinGetID("A")
+        try hwnd := WinGetID("A")
     if !hwnd
         return false
 
@@ -394,7 +422,8 @@ MatchAppWindow(app, hwnd := 0) {
         return MatchWindowFields(app["match"], hwnd)
 
     if app.Has("win_title") && app["win_title"] != "" {
-        if (hwnd = WinGetID("A"))
+        try active_hwnd := WinGetID("A")
+        if (active_hwnd && hwnd = active_hwnd)
             return WinActive(app["win_title"])
     }
 

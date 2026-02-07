@@ -20,6 +20,7 @@ LoadConfig(config_path, default_config := Map()) {
     errors := ValidateConfig(config, ConfigSchema())
     ValidateSuperKeys(config, errors)
     ValidateApps(config, errors)
+    ValidateVirtualDesktopHotkeys(config, errors)
 
     return Map(
         "config", config,
@@ -118,7 +119,13 @@ ConfigSchema() {
                 "hotkey", "string",
                 "desktop", "number"
             )],
-            "debug_cycle", "bool"
+            "debug_cycle", "bool",
+            "debug_hotkeys", "bool",
+            "desktop_hotkeys_duplicates", OptionalSpec([Map(
+                "hotkey", "string",
+                "desktop", "number",
+                "existing", "number"
+            )])
         ),
         "directional_focus", Map(
             "enabled", "bool",
@@ -178,6 +185,8 @@ NormalizeVirtualDesktopConfig(config) {
 
     vd_config := config["virtual_desktop"]
     desktop_hotkeys := []
+    duplicates := []
+    seen_hotkeys := Map()
     keys_to_remove := []
 
     for key, val in vd_config {
@@ -190,24 +199,39 @@ NormalizeVirtualDesktopConfig(config) {
                 if !(entry is Map)
                     continue
                 if entry.Has("hotkey") && entry["hotkey"] != "" {
-                    desktop_hotkeys.Push(Map(
-                        "desktop", desktop_num,
-                        "hotkey", entry["hotkey"]
-                    ))
+                    hotkey := entry["hotkey"]
+                    if seen_hotkeys.Has(hotkey) {
+                        duplicates.Push(Map("hotkey", hotkey, "desktop", desktop_num, "existing", seen_hotkeys[hotkey]))
+                    } else {
+                        seen_hotkeys[hotkey] := desktop_num
+                        desktop_hotkeys.Push(Map(
+                            "desktop", desktop_num,
+                            "hotkey", hotkey
+                        ))
+                    }
                 }
             }
         } else if (val is Map) {
             if val.Has("hotkey") && val["hotkey"] != "" {
-                desktop_hotkeys.Push(Map(
-                    "desktop", desktop_num,
-                    "hotkey", val["hotkey"]
-                ))
+                hotkey := val["hotkey"]
+                if seen_hotkeys.Has(hotkey) {
+                    duplicates.Push(Map("hotkey", hotkey, "desktop", desktop_num, "existing", seen_hotkeys[hotkey]))
+                } else {
+                    seen_hotkeys[hotkey] := desktop_num
+                    desktop_hotkeys.Push(Map(
+                        "desktop", desktop_num,
+                        "hotkey", hotkey
+                    ))
+                }
             }
         }
     }
 
     if (desktop_hotkeys.Length > 0)
         vd_config["desktop_hotkeys"] := desktop_hotkeys
+
+    if (duplicates.Length > 0)
+        vd_config["desktop_hotkeys_duplicates"] := duplicates
 
     for _, key in keys_to_remove
         vd_config.Delete(key)
@@ -253,6 +277,23 @@ ValidateApps(config, errors) {
                 errors.Push("config.apps[" index "].match.class_regex requires class")
             if (match.Has("title_regex") && !has_title)
                 errors.Push("config.apps[" index "].match.title_regex requires title")
+        }
+    }
+}
+
+ValidateVirtualDesktopHotkeys(config, errors) {
+    if !config.Has("virtual_desktop") || !(config["virtual_desktop"] is Map)
+        return
+    vd_config := config["virtual_desktop"]
+    if vd_config.Has("desktop_hotkeys_duplicates") && (vd_config["desktop_hotkeys_duplicates"] is Array) {
+        for _, entry in vd_config["desktop_hotkeys_duplicates"] {
+            if !(entry is Map)
+                continue
+            hotkey := entry.Has("hotkey") ? entry["hotkey"] : ""
+            desktop := entry.Has("desktop") ? entry["desktop"] : ""
+            existing := entry.Has("existing") ? entry["existing"] : ""
+            if (hotkey != "")
+                errors.Push("config.virtual_desktop.hotkey '" hotkey "' maps to desktop " desktop " but is already mapped to " existing)
         }
     }
 }
