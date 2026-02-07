@@ -424,6 +424,7 @@ MatchAppWindow(app, hwnd := 0) {
         return MatchWindowFields(app["match"], hwnd)
 
     if app.Has("win_title") && app["win_title"] != "" {
+        active_hwnd := 0
         try active_hwnd := WinGetID("A")
         if (active_hwnd && hwnd = active_hwnd)
             return WinActive(app["win_title"])
