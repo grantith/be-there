@@ -34,29 +34,20 @@ RegisterSuperKeyHotkey("~", "", (*) => OnSuperKeyDown())
 if HasSuperKey("CapsLock")
     SetCapsLockState "AlwaysOff"
 
-reload_config := Config["reload"]
-if reload_config["enabled"] {
-    reload_hotkey := reload_config["hotkey"]
-    reload_mode_hotkey := reload_config["mode_hotkey"]
-    reload_mode_enabled := reload_config["mode_enabled"]
-    reload_mode_timeout := reload_config["mode_timeout_ms"]
-    global reload_mode_active := false
+global reload_mode_active := false
+reload_mode_timeout := 20000
+RegisterSuperComboHotkey(";", (*) => ActivateReloadMode(reload_mode_timeout))
+HotIf ReloadModeActive
+Hotkey("r", (*) => ExecuteCommand(() => Reload()))
+Hotkey("i", (*) => ExecuteCommand(OpenWindowInspector))
+Hotkey("n", (*) => ExecuteCommand(ToggleCommandHelper))
+Hotkey("w", (*) => ExecuteCommand(OpenNewWindowForActiveApp))
+Hotkey("e", (*) => ExecuteCommand(OpenConfigFile))
+Hotkey("Esc", ClearReloadMode)
+HotIf
 
-    if reload_mode_enabled {
-        RegisterSuperComboHotkey(reload_mode_hotkey, (*) => ActivateReloadMode(reload_mode_timeout))
-        HotIf ReloadModeActive
-        Hotkey(reload_hotkey, (*) => ExecuteCommand(() => Reload()))
-        Hotkey("i", (*) => ExecuteCommand(OpenWindowInspector))
-        Hotkey("n", (*) => ExecuteCommand(ToggleCommandHelper))
-        Hotkey("w", (*) => ExecuteCommand(OpenNewWindowForActiveApp))
-        Hotkey("e", (*) => ExecuteCommand(OpenConfigFile))
-        Hotkey("Esc", ClearReloadMode)
-        HotIf
-    }
-}
-
-if reload_config["enabled"] && reload_config["watch_enabled"]
-    StartConfigWatcher(config_path, reload_config["watch_interval_ms"])
+if Config.Has("config_watch") && Config["config_watch"]["enabled"]
+    StartConfigWatcher(config_path, Config["config_watch"]["interval_ms"])
 
 SetWinDelay(-1)
 
@@ -112,6 +103,10 @@ DefaultConfig() {
             "include_minimized", true,
             "close_on_focus_loss", true
         ),
+        "config_watch", Map(
+            "enabled", false,
+            "interval_ms", 2500
+        ),
         "window_manager", Map(
             "grid_size", 3,
             "margins", Map(
@@ -166,15 +161,9 @@ DefaultConfig() {
             "enabled", true,
             "overlay_opacity", 200
         ),
-        "reload", Map(
-            "enabled", true,
-            "hotkey", "r",
-            "super_key_required", true,
-            "watch_enabled", false,
-            "watch_interval_ms", 1000,
-            "mode_enabled", true,
-            "mode_hotkey", ";",
-            "mode_timeout_ms", 20000
+        "config_watch", Map(
+            "enabled", false,
+            "interval_ms", 2500
         )
     )
 }

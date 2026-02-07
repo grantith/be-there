@@ -158,12 +158,7 @@ update_interval_ms = 20
 enabled = true
 overlay_opacity = 200
 
-[reload]
-enabled = true
-hotkey = "r"
-super_key_required = true
-watch_enabled = false
-watch_interval_ms = 2500
-mode_enabled = true
-mode_hotkey = ";"
-mode_timeout_ms = 20000
+[config_watch]
+enabled = false
+# Only used if WinAPI method has to fall back to polling.
+interval_ms = 2500

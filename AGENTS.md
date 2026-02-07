@@ -108,7 +108,7 @@ Single test / focused run:
 
 ## Suggested Manual Checks
 - Launch `harken.ahk` with a clean `harken.toml` and verify hotkeys.
-- Validate reload flow (normal hotkey and command mode).
+- Validate reload flow (command mode).
 - Confirm Command Overlay and helper tools still open and update.
 - If touching config schema, ensure errors log correctly in `%APPDATA%\harken\config.errors.log`.
 - If touching tray indicator: confirm tray icon updates on desktop change.

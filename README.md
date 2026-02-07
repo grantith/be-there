@@ -99,7 +99,7 @@ Enter Command Mode with `super + ;`.
 - Start the program and enter command mode with `super + ;`. The binary is not currently signed and you will be warned by Windows. Clone and use `harken.ahk` directly as an alternative.
 - The program might fail on first run? Probably something to do with the config. For now you can create the config first to _maybe_ avoid the initial-crash scenario.
 - Press `e` to open the config file. You can also find it manually in `~/.config/harken/harken.toml` as it will be created on first run.
-- After making changes to your config you can reload the config (the entire program, actually) with `r` while in command mode.
+- After making changes to your config you can reload (the entire program) with `r` while in command mode.
 
 ### All default keybindings
 
@@ -173,6 +173,16 @@ These are examples for the launch-or-focus keybindings.
 - Use it to identify values for `apps[].win_title` in your config.
 - In Command Mode, press `i` to launch the window inspector.
 - Use Refresh to update the list; Copy Selected/All or Export to save results.
+
+### Config watcher
+
+Optional config file watcher that reloads the program when your config changes.
+
+```toml
+[config_watch]
+enabled = false
+interval_ms = 2500
+```
 
 ## Limitations
 - This has not been tested with multi-monitor setups or much outside of ultra-wide monitors.

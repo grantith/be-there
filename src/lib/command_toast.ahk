@@ -387,7 +387,7 @@ BuildCommandToastRows(key_width := 16) {
     }
     rows.Push(Map("key", "", "desc", ""))
     rows.Push(Map("key", "Command Mode", "desc", ""))
-    rows.Push(Map("key", Config["reload"]["mode_hotkey"], "desc", "enter command mode"))
+    rows.Push(Map("key", ";", "desc", "enter command mode"))
     return rows
 }
 

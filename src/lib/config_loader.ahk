@@ -156,15 +156,9 @@ ConfigSchema() {
             "enabled", "bool",
             "overlay_opacity", "number"
         ),
-        "reload", Map(
+        "config_watch", Map(
             "enabled", "bool",
-            "hotkey", "string",
-            "super_key_required", "bool",
-            "watch_enabled", "bool",
-            "watch_interval_ms", "number",
-            "mode_enabled", "bool",
-            "mode_hotkey", "string",
-            "mode_timeout_ms", "number"
+            "interval_ms", "number"
         )
     )
 }
@@ -183,6 +177,7 @@ NormalizeSuperKeyConfig(config) {
     if (super_value is String)
         config["super_key"] := [super_value]
 }
+
 
 NormalizeVirtualDesktopConfig(config) {
     if !config.Has("virtual_desktop") || !(config["virtual_desktop"] is Map)

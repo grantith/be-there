@@ -507,9 +507,7 @@ OnSuperKeyUp() {
     UpdateCommandToastVisibility()
 }
 
-if (move_mode_enabled || Config["reload"]["mode_enabled"] || Config["helper"]["enabled"]) {
-    RegisterSuperKeyHotkey("", " up", (*) => OnSuperKeyUp())
-}
+RegisterSuperKeyHotkey("", " up", (*) => OnSuperKeyUp())
 
 Hotkey("~LButton", (*) => BeginSuperDrag())
 
