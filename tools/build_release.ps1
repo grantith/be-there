@@ -6,7 +6,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$ahk_link = "https://www.autohotkey.com/download/2.1/AutoHotkey_2.1-alpha.18.zip"
+# Use the mirror to avoid 403 and not need to mess with useragent
+# The alpha releases don't have a reliable mirror for automations currently
+# so we created a deps release for 2.1-alpha.18
+$ahk_link = "https://github.com/grantith/harken/releases/download/deps/AutoHotkey_2.1-alpha.18.zip"
 $ahk_2exe_link = "https://github.com/AutoHotkey/Ahk2Exe/releases/download/Ahk2Exe1.1.37.02a0a/Ahk2Exe1.1.37.02a0.zip"
 $script_dir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repo_root = Join-Path $script_dir ".." | Resolve-Path
@@ -22,7 +25,7 @@ New-Item -ItemType Directory -Force -Path $ahk_path | Out-Null
 
 # First, AHK
 if (!(Get-ChildItem -Path $ahk_path -Recurse -Filter AutoHotkey64.exe -ErrorAction SilentlyContinue)) {
-    Write-Host "Downloading Ahkv2 from $ahk_link..."
+    Write-Host "Downloading Ahkv2 from $ahk_link"
     $ahk_zip_path = Join-Path $ahk_path "ahk.zip"
     Invoke-WebRequest -Uri $ahk_link -OutFile $ahk_zip_path
     Expand-Archive -Path $ahk_zip_path -DestinationPath $ahk_path -Force
@@ -33,7 +36,7 @@ if (!(Get-ChildItem -Path $ahk_path -Recurse -Filter AutoHotkey64.exe -ErrorActi
 
 # Second, Ahk2Exe
 if (!(Get-ChildItem -Path $ahk_path -Recurse -Filter Ahk2Exe.exe -ErrorAction SilentlyContinue)) {
-    Write-Host "Downloading Ahk2Exe from $ahk_2exe_link..."
+    Write-Host "Downloading Ahk2Exe from $ahk_2exe_link"
     $ahk_2xe_zip_path = Join-Path $ahk_path "ahk2exe.zip"
     Invoke-WebRequest -Uri $ahk_2exe_link -OutFile $ahk_2xe_zip_path
     Expand-Archive -Path $ahk_2xe_zip_path -DestinationPath $ahk_path -Force
