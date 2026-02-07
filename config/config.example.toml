@@ -47,6 +47,7 @@ win_title = "ahk_exe telegram.exe"
 run = "telegram"
 run_paths = []
 # desktop = 2
+# ignore_classes = ["Qt51518QWindowToolSaveBits"]
 
 [[apps]]
 id = "discord"

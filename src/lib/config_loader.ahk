@@ -49,6 +49,7 @@ ConfigSchema() {
             "run_paths", OptionalSpec(["string"]),
             "desktop", OptionalSpec("number"),
             "follow_on_spawn", OptionalSpec("bool"),
+            "ignore_classes", OptionalSpec(["string"]),
             "focus_border", OptionalSpec(Map(
                 "border_color", OptionalSpec("string"),
                 "move_mode_color", OptionalSpec("string"),

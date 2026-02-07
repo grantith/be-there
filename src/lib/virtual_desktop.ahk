@@ -82,6 +82,11 @@ VirtualDesktopAutoAssignTick(*) {
 TryAutoAssignWindow(hwnd) {
     if !WindowExistsAcrossDesktops(hwnd)
         return
+    try ex_style := WinGetExStyle("ahk_id " hwnd)
+    catch
+        return
+    if (ex_style & 0x80) || (ex_style & 0x08000000)
+        return
 
     for _, app in Config["apps"] {
         if !(app is Map)
@@ -89,6 +94,8 @@ TryAutoAssignWindow(hwnd) {
         if !app.Has("desktop")
             continue
         if !AppConfigMatchesWindow(app, hwnd)
+            continue
+        if AppConfigIgnoresWindow(app, hwnd)
             continue
         target_desktop := app["desktop"]
         if (target_desktop <= 0)
@@ -119,6 +126,21 @@ AppConfigMatchesWindow(app, hwnd) {
 
     if app.Has("win_title") && app["win_title"] != "" {
         try return WinExist(app["win_title"] " ahk_id " hwnd)
+    }
+    return false
+}
+
+AppConfigIgnoresWindow(app, hwnd) {
+    if !(app is Map)
+        return false
+    if !app.Has("ignore_classes") || !(app["ignore_classes"] is Array)
+        return false
+    try class_name := WinGetClass("ahk_id " hwnd)
+    catch
+        return false
+    for _, ignore_class in app["ignore_classes"] {
+        if (StrLower(ignore_class) = StrLower(class_name))
+            return true
     }
     return false
 }
