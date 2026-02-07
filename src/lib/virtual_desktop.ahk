@@ -9,6 +9,8 @@ VirtualDesktopEnabled() {
     return Config["virtual_desktop"]["enabled"]
 }
 
+global vd_auto_assign_timer := 0
+
 VirtualDesktopTrayEnabled() {
     global Config
     if !VirtualDesktopEnabled()
@@ -30,6 +32,95 @@ InitVirtualDesktop() {
     if (ensure_count > 0)
         VD.createUntil(ensure_count)
     InitVirtualDesktopTrayIndicator()
+    InitVirtualDesktopAutoAssign()
+}
+
+InitVirtualDesktopAutoAssign() {
+    if !VirtualDesktopEnabled()
+        return
+    if !Config["virtual_desktop"].Has("auto_assign") || !Config["virtual_desktop"]["auto_assign"]
+        return
+    interval := 500
+    if Config["virtual_desktop"].Has("auto_assign_interval_ms")
+        interval := Config["virtual_desktop"]["auto_assign_interval_ms"]
+    StartVirtualDesktopAutoAssign(interval)
+}
+
+StartVirtualDesktopAutoAssign(interval_ms) {
+    global vd_auto_assign_timer
+    if vd_auto_assign_timer
+        SetTimer(vd_auto_assign_timer, 0)
+    vd_auto_assign_timer := VirtualDesktopAutoAssignTick
+    SetTimer(vd_auto_assign_timer, interval_ms)
+}
+
+VirtualDesktopAutoAssignTick(*) {
+    static seen_hwnds := Map()
+    if !VirtualDesktopEnabled()
+        return
+    if !Config.Has("virtual_desktop") || !Config["virtual_desktop"].Has("auto_assign") || !Config["virtual_desktop"]["auto_assign"]
+        return
+
+    bak_detect_hidden_windows := A_DetectHiddenWindows
+    A_DetectHiddenWindows := true
+    win_list := WinGetList()
+    A_DetectHiddenWindows := bak_detect_hidden_windows
+
+    for _, hwnd in win_list {
+        if seen_hwnds.Has(hwnd)
+            continue
+        seen_hwnds[hwnd] := true
+        TryAutoAssignWindow(hwnd)
+    }
+
+    for hwnd, _ in seen_hwnds {
+        if !WindowExistsAcrossDesktops(hwnd)
+            seen_hwnds.Delete(hwnd)
+    }
+}
+
+TryAutoAssignWindow(hwnd) {
+    if !WindowExistsAcrossDesktops(hwnd)
+        return
+
+    for _, app in Config["apps"] {
+        if !(app is Map)
+            continue
+        if !app.Has("desktop")
+            continue
+        if !AppConfigMatchesWindow(app, hwnd)
+            continue
+        target_desktop := app["desktop"]
+        if (target_desktop <= 0)
+            return
+        total := VD.getCount()
+        if (target_desktop > total) {
+            VD.createUntil(target_desktop)
+            VD.IVirtualDesktopListChanged()
+            total := VD.getCount()
+        }
+        if (target_desktop > total)
+            return
+        follow_on_spawn := true
+        if app.Has("follow_on_spawn")
+            follow_on_spawn := app["follow_on_spawn"]
+        VD.MoveWindowToDesktopNum("ahk_id " hwnd, target_desktop, follow_on_spawn)
+        if follow_on_spawn {
+            VD.goToDesktopNum(target_desktop)
+            VD.WaitDesktopSwitched(target_desktop)
+        }
+        return
+    }
+}
+
+AppConfigMatchesWindow(app, hwnd) {
+    if app.Has("match") && (app["match"] is Map)
+        return MatchWindowFields(app["match"], hwnd)
+
+    if app.Has("win_title") && app["win_title"] != "" {
+        try return WinExist(app["win_title"] " ahk_id " hwnd)
+    }
+    return false
 }
 
 InitVirtualDesktopTrayIndicator() {

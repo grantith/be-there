@@ -109,8 +109,8 @@ Enter Command Mode with `super + ;`.
 | --- | --- |
 | `super + /` | Show command overlay (temporary) |
 | `super + w` | Window selector (window walker) |
-| `super + c` | Cycle app windows on current desktop |
-| `super + shift + c` | Cycle app windows across desktops (not working) |
+| `super + c` | Cycle app windows across desktops |
+| `super + shift + c` | Cycle app windows on current desktop |
 | `super + space` | Center width cycle |
 | `super + m` | Maximize/un-maximize |
 | `super + q` | Close window |
@@ -142,6 +142,7 @@ Enter Command Mode with `super + ;`.
 | `super + alt + shift + h/l` | Move window to previous/next desktop (follow) |
 | `super + alt + <key>` | Go to mapped desktop (`[[virtual_desktop.<N>]]`) |
 | `super + alt + shift + <key>` | Move window to mapped desktop (follow) |
+| `virtual_desktop.auto_assign` | Move newly created windows that match `apps[]` with `desktop` set |
 
 #### Apps (defaults)
 

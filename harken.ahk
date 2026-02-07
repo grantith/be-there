@@ -138,7 +138,9 @@ DefaultConfig() {
             "debug_cycle", false,
             "debug_hotkeys", false,
             "tray_indicator", false,
-            "tray_format", "{current}/{total}"
+            "tray_format", "{current}/{total}",
+            "auto_assign", false,
+            "auto_assign_interval_ms", 500
         ),
         "directional_focus", Map(
             "enabled", true,
@@ -434,9 +436,17 @@ MatchAppWindow(app, hwnd := 0) {
 }
 
 MatchWindowFields(match, hwnd) {
-    exe_name := WinGetProcessName("ahk_id " hwnd)
-    class_name := WinGetClass("ahk_id " hwnd)
-    title := WinGetTitle("ahk_id " hwnd)
+    if !WinExist("ahk_id " hwnd)
+        return false
+    try exe_name := WinGetProcessName("ahk_id " hwnd)
+    catch
+        return false
+    try class_name := WinGetClass("ahk_id " hwnd)
+    catch
+        return false
+    try title := WinGetTitle("ahk_id " hwnd)
+    catch
+        return false
 
     if !MatchField(match, "exe", exe_name)
         return false

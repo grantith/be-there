@@ -123,6 +123,8 @@ ConfigSchema() {
             "debug_hotkeys", "bool",
             "tray_indicator", "bool",
             "tray_format", "string",
+            "auto_assign", "bool",
+            "auto_assign_interval_ms", "number",
             "desktop_hotkeys_duplicates", OptionalSpec([Map(
                 "hotkey", "string",
                 "desktop", "number",

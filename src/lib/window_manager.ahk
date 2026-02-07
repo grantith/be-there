@@ -575,6 +575,10 @@ class Gui_Guides
 
     CornerRadius(curve := 15)
     {
+        if !this.gui
+            return
+        if !WinExist("ahk_id " this.gui.Hwnd)
+            return
         this.gui.GetPos(,, &width, &height)                             ; get position of gui
         WinSetRegion('0-0 w' width ' h' height ' r'                     ; use position to round the corners
         curve '-' curve, this.gui)                                      ; using this curve value
