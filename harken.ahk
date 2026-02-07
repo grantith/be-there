@@ -427,6 +427,7 @@ MatchAppWindow(app, hwnd := 0) {
 MatchWindowFields(match, hwnd) {
     if !WinExist("ahk_id " hwnd)
         return false
+    ; Window handles can go stale during app switching; guard WinGet* calls.
     try exe_name := WinGetProcessName("ahk_id " hwnd)
     catch
         return false

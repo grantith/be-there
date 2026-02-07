@@ -246,6 +246,7 @@ ApplyCurrentDesktopOrder(exe, win_list, active_hwnd, current_only := false) {
     for _, id in current_order
         current_set[id] := true
 
+    ; Current-desktop ordering uses visible windows to avoid skipping local tiles.
     if (current_order.Length = 0) {
         if (current_only && active_hwnd && WindowExistsAcrossDesktops(active_hwnd))
             return [active_hwnd]
@@ -457,6 +458,7 @@ BuildCycleWindowList(exe, win_list) {
     if !VirtualDesktopEnabled()
         return win_list
 
+    ; Cache app windows seen across desktops since WinGetList can hide off-desktop windows.
     cache := UpdateAppCycleCache(exe, win_list)
     if (cache.Count = 0)
         return win_list

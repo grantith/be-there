@@ -217,6 +217,7 @@ ToggleCommandHelper() {
 
 ShowCommandToastTemporary() {
     global command_helper_enabled, command_toast_temp_visible
+    ; Allow the temporary overlay even if persistent helper overlay is disabled.
     command_toast_temp_visible := true
     ShowCommandToast(true)
     StartCommandToastInputHook()
@@ -284,6 +285,7 @@ CommandToastKeydownHandler(*) {
 CommandToastOnKeyDown(*) {
     if ReloadModeActive() || Window.IsMoveMode()
         return
+    ; Any input dismisses the temporary overlay in normal mode.
     HideCommandToast()
 }
 

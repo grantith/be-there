@@ -40,6 +40,7 @@ InitVirtualDesktopAutoAssign() {
         return
     if !Config["virtual_desktop"].Has("auto_assign") || !Config["virtual_desktop"]["auto_assign"]
         return
+    ; Polling watcher only handles newly created windows; users can move later.
     interval := 500
     if Config["virtual_desktop"].Has("auto_assign_interval_ms")
         interval := Config["virtual_desktop"]["auto_assign_interval_ms"]
@@ -70,6 +71,7 @@ VirtualDesktopAutoAssignTick(*) {
         if seen_hwnds.Has(hwnd)
             continue
         seen_hwnds[hwnd] := true
+        ; Assign once per window so manual moves are respected afterward.
         TryAutoAssignWindow(hwnd)
     }
 
@@ -102,6 +104,7 @@ TryAutoAssignWindow(hwnd) {
             return
         total := VD.getCount()
         if (target_desktop > total) {
+            ; Ensure the destination desktop exists before moving the window.
             VD.createUntil(target_desktop)
             VD.IVirtualDesktopListChanged()
             total := VD.getCount()
@@ -148,6 +151,7 @@ AppConfigIgnoresWindow(app, hwnd) {
 InitVirtualDesktopTrayIndicator() {
     if !VirtualDesktopTrayEnabled()
         return
+    ; Update via VD notifications to avoid timer polling.
     UpdateVirtualDesktopTrayIndicator()
     VD.ListenersCurrentVirtualDesktopChanged[UpdateVirtualDesktopTrayIndicator] := true
 }
@@ -179,6 +183,7 @@ FormatVirtualDesktopTrayText(current, total) {
 SetTrayIconText(text) {
     if (text = "")
         return
+    ; Draw text onto the existing AHK tray icon (current/total).
     hicon := CreateTextTrayIcon(text)
     if !hicon
         return
