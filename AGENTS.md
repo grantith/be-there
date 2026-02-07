@@ -27,11 +27,16 @@ Dev build (CI):
 Single test / focused run:
 - No unit test runner exists. Use manual verification steps (launch `harken.ahk`, validate
   hotkeys, reload flow, and Command Overlay) or run targeted helper tools in `tools/`.
+- Focused validation (pick relevant items):
+  - Launch `harken.ahk` with a clean config and verify: super hotkeys, window cycling, overlay.
+  - If virtual desktops touched: test `super+alt+h/l`, mapped desktop hotkeys, and tray indicator.
 
 ## Code Style Guidelines
 ### AutoHotkey version and file headers
 - Use AutoHotkey v2 syntax and conventions.
-- Keep `#Requires AutoHotkey v2.0` in entry points and new top-level scripts.
+- Virtual desktop integration requires AutoHotkey v2.1 alpha (VD.ahk dependency).
+- Keep `#Requires AutoHotkey v2.0` in entry points and new top-level scripts unless a file
+  specifically requires v2.1 alpha features.
 - Keep `#Include` statements at the top and ordered by dependency.
 
 ### Formatting
@@ -62,6 +67,7 @@ Single test / focused run:
 - Use clear, user-facing error messages for missing dependencies or invalid config.
 - For config validation, return error arrays and handle them in the entry point.
 - Avoid throwing for normal control flow.
+- Guard `WinGetID("A")` calls when no active window is possible (use `try`/`catch`).
 
 ### Config handling
 - Keep user configuration separate from core behavior.
@@ -72,15 +78,22 @@ Single test / focused run:
   - Schema in `src/lib/config_loader.ahk`
   - `config/config.example.toml`
   - `README.md`
+- If adding virtual desktop hotkeys:
+  - Normalize new config formats in `NormalizeVirtualDesktopConfig`.
+  - Update debug logs and config validation for duplicate hotkeys.
 
 ### Hotkeys and window behavior
 - Keep hotkey registration centralized under `src/hotkeys/`.
 - Avoid direct global state unless required; prefer explicit `global` declarations when needed.
 - For window manipulation, consider edge cases with elevated windows and multiple monitors.
+- Be careful with modifier ordering: use `HotIf` guards and wildcard hotkeys when needed.
 
 ### UI helpers
 - GUI helpers (overlays, inspectors) should remain non-blocking and lightweight.
 - Prefer explicit refresh actions instead of continuous loops when possible.
+- Command overlay behavior:
+  - Normal mode: `super + /` shows temporary overlay; any key hides it.
+  - Command/move modes: overlay stays visible and is centered on screen.
 
 ### Third-party code
 - Keep third-party code in `src/lib/` and document licensing in `LICENSES/`.
@@ -97,7 +110,9 @@ Single test / focused run:
 - Launch `harken.ahk` with a clean `harken.toml` and verify hotkeys.
 - Validate reload flow (normal hotkey and command mode).
 - Confirm Command Overlay and helper tools still open and update.
-- If touching config schema, ensure errors log correctly in `~/.config/harken/config.errors.log`.
+- If touching config schema, ensure errors log correctly in `%APPDATA%\harken\config.errors.log`.
+- If touching tray indicator: confirm tray icon updates on desktop change.
+- If touching cycling: verify `super+c` (all desktops) and `super+shift+c` (current desktop).
 
 ## Paths and Layout Notes
 - Main script: `harken.ahk`.
@@ -105,6 +120,7 @@ Single test / focused run:
 - JSON parsing: `src/lib/JXON.ahk`.
 - Window manager: `src/lib/window_manager.ahk`.
 - Hotkeys: `src/hotkeys/*.ahk`.
+- Virtual desktop helpers: `src/lib/virtual_desktop.ahk` + `src/lib/VD.ahk`.
 
 ## Build Artifacts
 - `dist/harken.exe`
@@ -115,3 +131,13 @@ Single test / focused run:
 - Keep behavior consistent with existing hotkeys and overlays.
 - Document any new public functions or configuration keys.
 - Favor explicitness over cleverness.
+
+## Recent Project-Specific Notes
+- Debug logs:
+  - `virtual_desktop.debug_cycle` writes `%APPDATA%\harken\cycle.debug.log`.
+  - `virtual_desktop.debug_hotkeys` writes `%APPDATA%\harken\vd.hotkeys.log` and `vd.actions.log`.
+  - Logs reset on startup when debug flags are enabled.
+- Tray indicator:
+  - `virtual_desktop.tray_indicator` draws `{current}/{total}` on the existing tray icon.
+  - Tooltip uses `virtual_desktop.tray_format`.
+- Window cycling across desktops uses a cache to include off-desktop windows.
